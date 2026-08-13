@@ -37,12 +37,13 @@
         <div class="sheet-heading">
           <button id="back-button" class="icon-button" aria-label="Back">&lsaquo;</button>
           <div><p class="eyebrow">Character sheet</p><h2 id="character-name">Hero</h2></div>
-          <button id="save-button" class="quiet">Save</button>
+          <div class="sheet-actions"><button id="export-hdc" class="quiet" hidden>Export HDC</button><button id="save-button" class="quiet">Save</button></div>
         </div>
         <div id="import-notice" class="notice" hidden></div>
         <div class="resource-row" id="resources"></div>
         <section class="panel"><div class="panel-title"><h3>Characteristics</h3><span id="characteristic-cost"></span></div><div id="characteristics" class="stat-grid"></div></section>
         <section class="panel"><div class="panel-title"><h3>Combat values</h3></div><div id="combat-values" class="stat-grid compact"></div></section>
+        <section class="panel" id="abilities-panel" hidden><div class="panel-title"><h3>Abilities</h3><span id="ability-count"></span></div><div id="ability-sections" class="entry-sections"></div></section>
         <section class="panel"><div class="panel-title"><h3>Dice</h3></div><div class="dice-controls"><button data-roll="3d6">3d6 roll</button><button data-roll="normal">Normal damage</button><button data-roll="killing">Killing damage</button></div><div id="roll-result" class="roll-result">Choose a roll.</div></section>
       </section>
     </main>
