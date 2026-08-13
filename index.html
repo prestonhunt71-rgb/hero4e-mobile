@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -27,6 +27,7 @@
           <div class="actions">
             <label class="button primary">Import HDC<input id="hdc-input" type="file" accept=".hdc,text/xml,application/xml" hidden /></label>
             <button id="new-character">New character</button>
+            <button id="sample-character" class="quiet">Import Iron Wolf sample</button>
           </div>
         </div>
         <div id="character-list" class="character-list" aria-live="polite"></div>
@@ -34,7 +35,7 @@
 
       <section id="sheet-view" class="view">
         <div class="sheet-heading">
-          <button id="back-button" class="icon-button" aria-label="Back">‹</button>
+          <button id="back-button" class="icon-button" aria-label="Back">â€¹</button>
           <div><p class="eyebrow">Character sheet</p><h2 id="character-name">Hero</h2></div>
           <button id="save-button" class="quiet">Save</button>
         </div>
@@ -46,10 +47,11 @@
       </section>
     </main>
     <nav class="bottom-nav" aria-label="Application">
-      <button class="active" data-nav="library-view"><span>◆</span>Characters</button>
-      <button data-nav="sheet-view"><span>⚄</span>Sheet</button>
+      <button class="active" data-nav="library-view"><span>â—†</span>Characters</button>
+      <button data-nav="sheet-view"><span>âš„</span>Sheet</button>
     </nav>
     <div id="toast" class="toast" role="status"></div>
     <script type="module" src="src/app.js"></script>
   </body>
 </html>
+
