@@ -33,6 +33,6 @@ export function entryReference4e(section,entry){
   const key=entry?.mechanics?.key||entry?.mechanics?.kind||entry?.xmlId;
   let page=SKILL_PAGES[key]||TALENT_PAGES[key]||PERK_PAGES[key]||POWER_PAGES[key]||FRAMEWORK_PAGES[key]||DISADVANTAGE_PAGES[key];
   if(entry?.mechanics?.isSkillEnhancer)page=41;
-  const pages=[page||SECTION_PAGES[section],...(entry?.mechanics?.modifiers||[]).map(modifier=>MODIFIER_PAGES[modifier.id||modifier.key||modifier.name]).filter(Boolean)];
+  const pages=[page||SECTION_PAGES[section],...(section==="martialarts"?[157]:[]),...(entry?.mechanics?.modifiers||[]).map(modifier=>MODIFIER_PAGES[modifier.id||modifier.key||modifier.name]).filter(Boolean)];
   return [...new Set(pages.filter(Boolean))].map(value=>`BBB, p. ${value}`).join("; ");
 }

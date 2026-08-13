@@ -58,6 +58,7 @@ import {
   skillSummary,
 } from "./skills.js";
 import { preparePortrait } from "./images.js";
+import { martialManeuverEffect4e, martialManeuverSummary4e } from "./martialarts.js";
 import { entryDefinition4e, entryReference4e, entryRoll4e } from "./descriptions.js";
 import {
   SKILL_ENHANCERS_4E,
@@ -193,6 +194,7 @@ function entryMechanicsSummary(section, entry) {
   if (section === "talents" || section === "perks") return abilitySummary(entry);
   if (section === "disadvantages") return disadvantageSummary(entry);
   if (section === "equipment") return equipmentSummary(entry);
+  if (section === "martialarts") return martialManeuverSummary4e(entry);
   return "";
 }
 function entryPointCost(section, entry) {
@@ -206,6 +208,7 @@ function entryPointCost(section, entry) {
     return Math.max(0,Number(entry.mechanics?.cost??entry.baseCost??0)-skillEnhancerDiscount4e(entry,enhancers));
   }
   if (section === "equipment") return entry.mechanics?.characterCost == null ? "Campaign" : Number(entry.mechanics.characterCost);
+  if (section === "martialarts") return Number(entry.mechanics?.characterPoints ?? entry.baseCost ?? 0);
   return Number(entry.mechanics?.cost ?? entry.baseCost ?? 0);
 }
 function renderEntries() {
@@ -610,9 +613,18 @@ function openEntryDetails(section, id) {
   $("#detail-definition").textContent = entryDefinition4e(section, entry);
   $("#detail-reference").textContent = entryReference4e(section, entry);
   $("#detail-mechanics").textContent = entryMechanicsSummary(section, entry) || "No additional mechanics recorded.";
+  renderMartialSpecifications(section, entry);
   $("#detail-notes").textContent = entry.notes || "No character-specific notes.";
   $("#detail-notes-wrap").hidden = !entry.notes;
   $("#entry-detail-dialog").showModal();
+}
+function renderMartialSpecifications(section,entry){
+  const box=$("#detail-martial-specs"),m=entry.mechanics;
+  box.hidden=section!=="martialarts"||!m;
+  if(box.hidden){box.innerHTML="";return;}
+  const facts=[["Action",m.action],["OCV",m.ocv],["DCV",m.dcv],["Damage Class Bonus",m.damageClasses||"—"],["Damage / Effect",martialManeuverEffect4e(entry,current.characteristics.STR)],["Add STR",m.addStrength?"Yes":"No"],["Use Weapon",m.useWeapon?"Yes":"No"],["Category",m.category]];
+  if(m.weaponEffect)facts.push(["Weapon Effect",m.weaponEffect]);
+  box.innerHTML=facts.map(([label,value])=>`<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("");
 }
 function openEntryEditor(section, id) {
   const entry = findEntry(section, id);

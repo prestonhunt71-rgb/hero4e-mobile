@@ -806,6 +806,16 @@ button:active {
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+.entry-detail-dialog {
+  width: min(680px, calc(100% - 14px));
+  max-height: 94dvh;
+}
+.martial-specs {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:8px 0 12px}
+.martial-specs div {min-width:0;padding:9px;background:#091728;border:2px solid #05080b}
+.martial-specs div:nth-child(5) {grid-column:1/-1}
+.martial-specs span,.martial-specs strong {display:block}
+.martial-specs span {color:var(--yellow);font-size:.66rem;text-transform:uppercase}
+.martial-specs strong {margin-top:3px;overflow-wrap:anywhere}
 .bbb-reference {
   display: block;
   margin-top: 3px;
