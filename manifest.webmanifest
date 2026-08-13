@@ -1,0 +1,11 @@
+{
+  "name": "HERO System Fourth Edition",
+  "short_name": "HERO4E",
+  "description": "Offline-first Fourth Edition character builder and play companion.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#07111f",
+  "theme_color": "#101b2d",
+  "orientation": "any",
+  "icons": [{ "src": "icons/hero4e.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

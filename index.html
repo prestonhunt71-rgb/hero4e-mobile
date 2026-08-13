@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#101b2d" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="HERO4E" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icons/hero4e.svg" />
+    <link rel="apple-touch-icon" href="icons/hero4e.svg" />
+    <link rel="stylesheet" href="src/styles.css" />
+    <title>HERO4E Mobile</title>
+  </head>
+  <body>
+    <header class="app-header">
+      <div><span class="eyebrow">HERO System</span><h1>Fourth Edition</h1></div>
+      <button id="install-button" class="quiet" hidden>Install</button>
+    </header>
+    <main>
+      <section id="library-view" class="view active">
+        <div class="hero-card">
+          <p class="eyebrow">Your roster</p>
+          <h2>Heroes ready anywhere.</h2>
+          <p>Import a Hero Designer character or create a Fourth Edition character on this device.</p>
+          <div class="actions">
+            <label class="button primary">Import HDC<input id="hdc-input" type="file" accept=".hdc,text/xml,application/xml" hidden /></label>
+            <button id="new-character">New character</button>
+          </div>
+        </div>
+        <div id="character-list" class="character-list" aria-live="polite"></div>
+      </section>
+
+      <section id="sheet-view" class="view">
+        <div class="sheet-heading">
+          <button id="back-button" class="icon-button" aria-label="Back">‹</button>
+          <div><p class="eyebrow">Character sheet</p><h2 id="character-name">Hero</h2></div>
+          <button id="save-button" class="quiet">Save</button>
+        </div>
+        <div id="import-notice" class="notice" hidden></div>
+        <div class="resource-row" id="resources"></div>
+        <section class="panel"><div class="panel-title"><h3>Characteristics</h3><span id="characteristic-cost"></span></div><div id="characteristics" class="stat-grid"></div></section>
+        <section class="panel"><div class="panel-title"><h3>Combat values</h3></div><div id="combat-values" class="stat-grid compact"></div></section>
+        <section class="panel"><div class="panel-title"><h3>Dice</h3></div><div class="dice-controls"><button data-roll="3d6">3d6 roll</button><button data-roll="normal">Normal damage</button><button data-roll="killing">Killing damage</button></div><div id="roll-result" class="roll-result">Choose a roll.</div></section>
+      </section>
+    </main>
+    <nav class="bottom-nav" aria-label="Application">
+      <button class="active" data-nav="library-view"><span>◆</span>Characters</button>
+      <button data-nav="sheet-view"><span>⚄</span>Sheet</button>
+    </nav>
+    <div id="toast" class="toast" role="status"></div>
+    <script type="module" src="src/app.js"></script>
+  </body>
+</html>
