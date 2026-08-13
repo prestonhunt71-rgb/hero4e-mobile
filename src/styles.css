@@ -886,6 +886,20 @@ button:active {
   flex-wrap: wrap;
   margin-top: 18px;
 }
+.entry-dialog .dialog-actions {
+  position: sticky;
+  z-index: 5;
+  bottom: -19px;
+  margin: 18px -19px -19px;
+  padding: 12px 19px calc(12px + env(safe-area-inset-bottom));
+  background: #101f2cea;
+  border-top: 3px solid #05080b;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 -10px 24px #0008;
+}
+.entry-dialog .dialog-actions button {
+  min-width: 108px;
+}
 .portrait-editor {
   display: flex;
   gap: 14px;
