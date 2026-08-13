@@ -35,7 +35,7 @@
 
       <section id="sheet-view" class="view">
         <div class="sheet-heading">
-          <button id="back-button" class="icon-button" aria-label="Back">â€¹</button>
+          <button id="back-button" class="icon-button" aria-label="Back">&lsaquo;</button>
           <div><p class="eyebrow">Character sheet</p><h2 id="character-name">Hero</h2></div>
           <button id="save-button" class="quiet">Save</button>
         </div>
@@ -47,8 +47,8 @@
       </section>
     </main>
     <nav class="bottom-nav" aria-label="Application">
-      <button class="active" data-nav="library-view"><span>â—†</span>Characters</button>
-      <button data-nav="sheet-view"><span>âš„</span>Sheet</button>
+      <button class="active" data-nav="library-view"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 3 9l9 5 9-5-9-6Zm-7 9 7 4 7-4v5l-7 4-7-4v-5Z"/></svg></span>Characters</button>
+      <button data-nav="sheet-view"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm2 4v2h8V7H8Zm0 4v2h8v-2H8Zm0 4v2h5v-2H8Z"/></svg></span>Sheet</button>
     </nav>
     <div id="toast" class="toast" role="status"></div>
     <script type="module" src="src/app.js"></script>
