@@ -51,6 +51,16 @@
       <button class="active" data-nav="library-view"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 3 9l9 5 9-5-9-6Zm-7 9 7 4 7-4v5l-7 4-7-4v-5Z"/></svg></span>Characters</button>
       <button data-nav="sheet-view"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm2 4v2h8V7H8Zm0 4v2h8v-2H8Zm0 4v2h5v-2H8Z"/></svg></span>Sheet</button>
     </nav>
+    <dialog id="entry-dialog" class="entry-dialog">
+      <form id="entry-form">
+        <input id="entry-section" type="hidden" /><input id="entry-id" type="hidden" />
+        <p class="eyebrow">Imported ability</p><h3>Edit HDC entry</h3>
+        <label>Name<input id="entry-name" required /></label>
+        <label>Levels<input id="entry-levels" type="number" inputmode="numeric" /></label>
+        <label>Notes<textarea id="entry-notes" rows="5"></textarea></label>
+        <div class="dialog-actions"><button id="cancel-entry" type="button" class="quiet">Cancel</button><button type="submit" class="primary">Apply</button></div>
+      </form>
+    </dialog>
     <div id="toast" class="toast" role="status"></div>
     <script type="module" src="src/app.js"></script>
   </body>
