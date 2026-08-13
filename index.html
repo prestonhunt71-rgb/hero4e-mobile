@@ -29,6 +29,7 @@
             <label class="button">Import HERO4E<input id="json-input" type="file" accept=".hero4e,.json,application/json" hidden /></label>
             <button id="new-character">New character</button>
             <button id="sample-character" class="quiet">Import Iron Wolf sample</button>
+            <button id="backup-roster" class="quiet">Backup roster</button><label class="button quiet">Restore roster<input id="roster-input" type="file" accept=".hero4e-roster,.json,application/json" hidden /></label>
           </div>
         </div>
         <div id="character-list" class="character-list" aria-live="polite"></div>
@@ -38,7 +39,7 @@
         <div class="sheet-heading">
           <button id="back-button" class="icon-button" aria-label="Back">&lsaquo;</button>
           <button id="identity-button" class="identity-heading"><p class="eyebrow">Character sheet</p><h2 id="character-name">Hero</h2><small id="player-name"></small></button>
-          <div class="sheet-actions"><button id="export-json" class="quiet">Export HERO4E</button><button id="export-foundry" class="quiet">Export Foundry</button><button id="export-hdc" class="quiet" hidden>Export HDC</button><button id="save-button" class="quiet">Save</button></div>
+          <div class="sheet-actions"><button id="delete-character" class="quiet danger-text">Delete</button><button id="export-json" class="quiet">Export HERO4E</button><button id="export-foundry" class="quiet">Export Foundry</button><button id="export-hdc" class="quiet" hidden>Export HDC</button><button id="save-button" class="quiet">Save</button></div>
         </div>
         <div id="import-notice" class="notice" hidden></div>
         <div class="resource-row" id="resources"></div>
