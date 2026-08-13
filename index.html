@@ -2,10 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#101b2d" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0b1118" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
     <meta name="apple-mobile-web-app-title" content="HERO4E" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="icon" href="icons/hero4e.svg" />
@@ -15,63 +21,537 @@
   </head>
   <body>
     <header class="app-header">
-      <div><span class="eyebrow">HERO System</span><h1>Fourth Edition</h1></div>
-      <div class="header-actions"><button id="refresh-button" class="quiet">Refresh app</button><button id="install-button" class="quiet" hidden>Install</button></div>
+      <div class="brand-lockup">
+        <span class="brand-burst">H!</span>
+        <div>
+          <span class="eyebrow">HERO System</span>
+          <h1>Fourth Edition</h1>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="refresh-button" class="quiet">Refresh app</button
+        ><button id="install-button" class="quiet" hidden>Install</button>
+      </div>
     </header>
     <main>
       <section id="library-view" class="view active">
         <div class="hero-card">
-          <p class="eyebrow">Your roster</p>
-          <h2>Heroes ready anywhere.</h2>
-          <p>Import a Hero Designer character or create a Fourth Edition character on this device.</p>
+          <div class="issue-tag">Issue No. 4</div>
+          <p class="eyebrow">The Champions roster</p>
+          <h2>Assemble<br />your heroes!</h2>
+          <p>
+            Build a Fourth Edition champion or bring one in from Hero Designer.
+          </p>
           <div class="actions">
-            <label class="button primary">Import HDC<input id="hdc-input" type="file" accept=".hdc,text/xml,application/xml" hidden /></label>
-            <label class="button">Import HERO4E<input id="json-input" type="file" accept=".hero4e,.json,application/json" hidden /></label>
+            <label class="button primary"
+              >Import HDC<input
+                id="hdc-input"
+                type="file"
+                accept=".hdc,text/xml,application/xml"
+                hidden
+            /></label>
+            <label class="button"
+              >Import HERO4E<input
+                id="json-input"
+                type="file"
+                accept=".hero4e,.json,application/json"
+                hidden
+            /></label>
             <button id="new-character">New character</button>
-            <button id="sample-character" class="quiet">Import Iron Wolf sample</button>
-            <button id="backup-roster" class="quiet">Backup roster</button><label class="button quiet">Restore roster<input id="roster-input" type="file" accept=".hero4e-roster,.json,application/json" hidden /></label>
+            <button id="sample-character" class="quiet">
+              Import Iron Wolf sample
+            </button>
+            <button id="backup-roster" class="quiet">Backup roster</button
+            ><label class="button quiet"
+              >Restore roster<input
+                id="roster-input"
+                type="file"
+                accept=".hero4e-roster,.json,application/json"
+                hidden
+            /></label>
           </div>
         </div>
-        <div id="character-list" class="character-list" aria-live="polite"></div>
+        <div class="roster-heading">
+          <div>
+            <span class="eyebrow">Secret identities</span>
+            <h2>My Characters</h2>
+          </div>
+          <button
+            id="new-character-shortcut"
+            class="round-action"
+            aria-label="Create new character"
+          >
+            +
+          </button>
+        </div>
+        <label class="roster-search"
+          ><span aria-hidden="true">⌕</span
+          ><input
+            id="character-search"
+            type="search"
+            placeholder="Search your roster"
+        /></label>
+        <div
+          id="character-list"
+          class="character-list"
+          aria-live="polite"
+        ></div>
       </section>
 
       <section id="sheet-view" class="view">
-        <div class="sheet-heading">
-          <button id="back-button" class="icon-button" aria-label="Back">&lsaquo;</button>
-          <div id="sheet-portrait" class="sheet-portrait"><span>H</span></div><button id="identity-button" class="identity-heading"><p class="eyebrow">Character sheet</p><h2 id="character-name">Hero</h2><small id="player-name"></small></button>
-          <div class="sheet-actions"><button id="delete-character" class="quiet danger-text">Delete</button><button id="export-json" class="quiet">Export HERO4E</button><button id="export-foundry" class="quiet">Export Foundry</button><button id="export-hdc" class="quiet" hidden>Export HDC</button><button id="save-button" class="quiet">Save</button></div>
+        <div class="sheet-heading comic-cover">
+          <button id="back-button" class="icon-button" aria-label="Back">
+            &lsaquo;
+          </button>
+          <div id="sheet-portrait" class="sheet-portrait"><span>H</span></div>
+          <button id="identity-button" class="identity-heading">
+            <p class="eyebrow">Character sheet</p>
+            <h2 id="character-name">Hero</h2>
+            <small id="player-name"></small>
+          </button>
+          <div class="sheet-actions">
+            <button id="delete-character" class="quiet danger-text">
+              Delete</button
+            ><button id="export-json" class="quiet">Export HERO4E</button
+            ><button id="export-foundry" class="quiet">Export Foundry</button
+            ><button id="export-hdc" class="quiet" hidden>Export HDC</button
+            ><button id="save-button" class="quiet">Save</button>
+          </div>
         </div>
         <div id="import-notice" class="notice" hidden></div>
-        <section class="panel" id="profile-panel"><div class="panel-title"><h3>Profile</h3><button id="profile-button" class="mini">Edit</button></div><div id="profile-summary" class="profile-summary"></div></section>
-        <section class="panel"><div class="panel-title"><h3>Points</h3><span id="point-summary"></span></div><div id="point-grid" class="point-grid"></div><small class="provisional">Configured Hero Designer totals; complete ability-cost accounting remains provisional.</small></section>
+        <nav class="sheet-jump" aria-label="Character sheet sections">
+          <button data-jump=".characteristics-panel">Stats</button
+          ><button data-jump="#abilities-panel">Abilities</button
+          ><button data-jump=".combat-panel">Combat</button
+          ><button data-jump=".dice-controls">Dice</button
+          ><button data-jump="#profile-panel">Profile</button>
+        </nav>
+        <section class="panel" id="profile-panel">
+          <div class="panel-title">
+            <h3>Profile</h3>
+            <button id="profile-button" class="mini">Edit</button>
+          </div>
+          <div id="profile-summary" class="profile-summary"></div>
+        </section>
+        <section class="panel">
+          <div class="panel-title">
+            <h3>Points</h3>
+            <span id="point-summary"></span>
+          </div>
+          <div id="point-grid" class="point-grid"></div>
+          <small class="provisional"
+            >Configured Hero Designer totals; complete ability-cost accounting
+            remains provisional.</small
+          >
+        </section>
         <div class="resource-row" id="resources"></div>
-        <section class="panel characteristics-panel"><div class="panel-title"><h3>Characteristics</h3><span id="characteristic-cost"></span></div><div id="characteristics" class="stat-grid"></div></section>
-        <section class="panel"><div class="panel-title"><h3>Movement</h3><span>inches/hexes</span></div><div id="movement" class="stat-grid compact"></div></section>
-        <section class="panel"><div class="panel-title"><h3>Combat values</h3></div><div id="combat-values" class="stat-grid compact"></div></section>
-        <section class="panel" id="abilities-panel" hidden><div class="panel-title"><h3>Abilities</h3><div><span id="ability-count"></span><button id="add-entry" class="mini" hidden>Add</button></div></div><div id="ability-sections" class="entry-sections"></div></section>
-        <section class="panel combat-panel"><div class="panel-title"><h3>Combat</h3><span id="combat-status"></span></div><div id="speed-chart" class="speed-chart"></div><div class="phase-tracker"><div class="phase-meter"><span id="phase-meter-fill"></span></div><div id="phase-status"></div><div class="action-buttons"><button data-action="halfMove">Half Move</button><button data-action="attack">Attack</button><button data-action="fullMove">Full Move</button><button data-action="drawWeapon">Draw</button><button data-action="brace">Brace</button><button data-action="set">Set</button><button data-action="hold">Hold</button><button id="clear-phase" class="quiet">Clear Phase</button></div></div><div class="damage-panel"><h4>Apply damage</h4><div class="power-numbers"><label>Damage type<select id="damage-type"><option value="normal">Normal</option><option value="killing">Killing</option></select></label><label>Defense<select id="damage-defense-kind"><option value="physical">Physical</option><option value="energy">Energy</option></select></label><label>Raw STUN<input id="damage-stun" type="number" min="0" value="0" /></label><label>Raw BODY<input id="damage-body" type="number" min="0" value="0" /></label><label>Total defense<input id="damage-defense" type="number" min="0" value="0" /></label><label>Resistant defense<input id="damage-resistant" type="number" min="0" value="0" /></label></div><button id="apply-damage" class="danger">Apply damage</button><div id="damage-status" class="power-preview">No damage applied.</div></div><div class="combat-controls"><button id="previous-segment" class="quiet">Previous</button><button id="next-segment" class="primary">Next segment</button><button id="take-recovery">Recovery</button><button id="reset-resources" class="quiet">Reset resources</button></div></section>
-        <section class="panel"><div class="panel-title"><h3>Dice</h3></div><div class="dice-controls"><button data-roll="3d6">3d6 roll</button><button data-roll="normal">Normal damage</button><button data-roll="killing">Killing damage</button></div><div id="roll-result" class="roll-result">Choose a roll.</div></section>
+        <section class="panel characteristics-panel">
+          <div class="panel-title">
+            <h3>Characteristics</h3>
+            <span id="characteristic-cost"></span>
+          </div>
+          <div id="characteristics" class="stat-grid"></div>
+        </section>
+        <section class="panel">
+          <div class="panel-title">
+            <h3>Movement</h3>
+            <span>inches/hexes</span>
+          </div>
+          <div id="movement" class="stat-grid compact"></div>
+        </section>
+        <section class="panel">
+          <div class="panel-title"><h3>Combat values</h3></div>
+          <div id="combat-values" class="stat-grid compact"></div>
+        </section>
+        <section class="panel" id="abilities-panel" hidden>
+          <div class="panel-title">
+            <h3>Abilities</h3>
+            <div>
+              <span id="ability-count"></span
+              ><button id="add-entry" class="mini" hidden>Add</button>
+            </div>
+          </div>
+          <div id="ability-sections" class="entry-sections"></div>
+        </section>
+        <section class="panel combat-panel">
+          <div class="panel-title">
+            <h3>Combat</h3>
+            <span id="combat-status"></span>
+          </div>
+          <div id="speed-chart" class="speed-chart"></div>
+          <div class="phase-tracker">
+            <div class="phase-meter"><span id="phase-meter-fill"></span></div>
+            <div id="phase-status"></div>
+            <div class="action-buttons">
+              <button data-action="halfMove">Half Move</button
+              ><button data-action="attack">Attack</button
+              ><button data-action="fullMove">Full Move</button
+              ><button data-action="drawWeapon">Draw</button
+              ><button data-action="brace">Brace</button
+              ><button data-action="set">Set</button
+              ><button data-action="hold">Hold</button
+              ><button id="clear-phase" class="quiet">Clear Phase</button>
+            </div>
+          </div>
+          <div class="damage-panel">
+            <h4>Apply damage</h4>
+            <div class="power-numbers">
+              <label
+                >Damage type<select id="damage-type">
+                  <option value="normal">Normal</option>
+                  <option value="killing">Killing</option>
+                </select></label
+              ><label
+                >Defense<select id="damage-defense-kind">
+                  <option value="physical">Physical</option>
+                  <option value="energy">Energy</option>
+                </select></label
+              ><label
+                >Raw STUN<input
+                  id="damage-stun"
+                  type="number"
+                  min="0"
+                  value="0" /></label
+              ><label
+                >Raw BODY<input
+                  id="damage-body"
+                  type="number"
+                  min="0"
+                  value="0" /></label
+              ><label
+                >Total defense<input
+                  id="damage-defense"
+                  type="number"
+                  min="0"
+                  value="0" /></label
+              ><label
+                >Resistant defense<input
+                  id="damage-resistant"
+                  type="number"
+                  min="0"
+                  value="0"
+              /></label>
+            </div>
+            <button id="apply-damage" class="danger">Apply damage</button>
+            <div id="damage-status" class="power-preview">
+              No damage applied.
+            </div>
+          </div>
+          <div class="combat-controls">
+            <button id="previous-segment" class="quiet">Previous</button
+            ><button id="next-segment" class="primary">Next segment</button
+            ><button id="take-recovery">Recovery</button
+            ><button id="reset-resources" class="quiet">Reset resources</button>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-title"><h3>Dice</h3></div>
+          <div class="dice-controls">
+            <button data-roll="3d6">3d6 roll</button
+            ><button data-roll="normal">Normal damage</button
+            ><button data-roll="killing">Killing damage</button>
+          </div>
+          <div id="roll-result" class="roll-result">Choose a roll.</div>
+        </section>
       </section>
     </main>
     <nav class="bottom-nav" aria-label="Application">
-      <button class="active" data-nav="library-view"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 3 9l9 5 9-5-9-6Zm-7 9 7 4 7-4v5l-7 4-7-4v-5Z"/></svg></span>Characters</button>
-      <button data-nav="sheet-view"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm2 4v2h8V7H8Zm0 4v2h8v-2H8Zm0 4v2h5v-2H8Z"/></svg></span>Sheet</button>
+      <button class="active" data-nav="library-view">
+        <span class="nav-icon"
+          ><svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M12 3 3 9l9 5 9-5-9-6Zm-7 9 7 4 7-4v5l-7 4-7-4v-5Z"
+            /></svg></span
+        >Characters
+      </button>
+      <button data-nav="sheet-view">
+        <span class="nav-icon"
+          ><svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M6 3h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm2 4v2h8V7H8Zm0 4v2h8v-2H8Zm0 4v2h5v-2H8Z"
+            /></svg></span
+        >Sheet
+      </button>
     </nav>
-    <dialog id="profile-dialog" class="entry-dialog"><form id="profile-form"><p class="eyebrow">Character details</p><h3>Edit profile and points</h3><label>Alternate identities<input id="profile-alternateIdentities" /></label><label>Campaign<input id="profile-campaignName" /></label><label>Background<textarea id="profile-background" rows="5"></textarea></label><label>Personality<textarea id="profile-personality" rows="4"></textarea></label><label>Quote<textarea id="profile-quote" rows="2"></textarea></label><label>Tactics<textarea id="profile-tactics" rows="4"></textarea></label><label>Appearance<textarea id="profile-appearance" rows="4"></textarea></label><label>Notes<textarea id="profile-notes" rows="4"></textarea></label><div class="point-edit"><label>Base points<input id="points-base" type="number" inputmode="numeric" /></label><label>Disadvantage allowance<input id="points-disadvantages" type="number" inputmode="numeric" /></label><label>Experience<input id="points-experience" type="number" inputmode="numeric" /></label></div><div class="dialog-actions"><button id="cancel-profile" type="button" class="quiet">Cancel</button><button type="submit" class="primary">Apply</button></div></form></dialog>
-    <dialog id="identity-dialog" class="entry-dialog"><form id="identity-form"><p class="eyebrow">Character</p><h3>Edit identity</h3><div class="portrait-editor"><div id="portrait-preview" class="portrait-preview"><span>H</span></div><div><label class="button">Choose image<input id="portrait-input" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" hidden /></label><button id="remove-portrait" type="button" class="quiet danger-text">Remove image</button><small id="portrait-status">Portrait uploader v20 ready. Choose a JPEG or PNG.</small></div></div><label>Character name<input id="identity-name" required /></label><label>Player name<input id="identity-player" /></label><div class="dialog-actions"><button id="cancel-identity" type="button" class="quiet">Cancel</button><button type="submit" class="primary">Apply</button></div></form></dialog>
+    <dialog id="profile-dialog" class="entry-dialog">
+      <form id="profile-form">
+        <p class="eyebrow">Character details</p>
+        <h3>Edit profile and points</h3>
+        <label
+          >Alternate identities<input id="profile-alternateIdentities" /></label
+        ><label>Campaign<input id="profile-campaignName" /></label
+        ><label
+          >Background<textarea
+            id="profile-background"
+            rows="5"
+          ></textarea></label
+        ><label
+          >Personality<textarea
+            id="profile-personality"
+            rows="4"
+          ></textarea></label
+        ><label>Quote<textarea id="profile-quote" rows="2"></textarea></label
+        ><label
+          >Tactics<textarea id="profile-tactics" rows="4"></textarea></label
+        ><label
+          >Appearance<textarea
+            id="profile-appearance"
+            rows="4"
+          ></textarea></label
+        ><label>Notes<textarea id="profile-notes" rows="4"></textarea></label>
+        <div class="point-edit">
+          <label
+            >Base points<input
+              id="points-base"
+              type="number"
+              inputmode="numeric" /></label
+          ><label
+            >Disadvantage allowance<input
+              id="points-disadvantages"
+              type="number"
+              inputmode="numeric" /></label
+          ><label
+            >Experience<input
+              id="points-experience"
+              type="number"
+              inputmode="numeric"
+          /></label>
+        </div>
+        <div class="dialog-actions">
+          <button id="cancel-profile" type="button" class="quiet">Cancel</button
+          ><button type="submit" class="primary">Apply</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="identity-dialog" class="entry-dialog">
+      <form id="identity-form">
+        <p class="eyebrow">Character</p>
+        <h3>Edit identity</h3>
+        <div class="portrait-editor">
+          <div id="portrait-preview" class="portrait-preview">
+            <span>H</span>
+          </div>
+          <div>
+            <label class="button"
+              >Choose image<input
+                id="portrait-input"
+                type="file"
+                accept="image/jpeg,image/png,.jpg,.jpeg,.png"
+                hidden /></label
+            ><button
+              id="remove-portrait"
+              type="button"
+              class="quiet danger-text"
+            >
+              Remove image</button
+            ><small id="portrait-status"
+              >Portrait uploader v20 ready. Choose a JPEG or PNG.</small
+            >
+          </div>
+        </div>
+        <label>Character name (optional)<input id="identity-name" placeholder="New Hero" /></label
+        ><label>Player name<input id="identity-player" /></label>
+        <div class="dialog-actions">
+          <button id="cancel-identity" type="button" class="quiet">
+            Cancel</button
+          ><button type="submit" class="primary">Apply</button>
+        </div>
+      </form>
+    </dialog>
     <dialog id="entry-dialog" class="entry-dialog">
       <form id="entry-form">
-        <input id="entry-section" type="hidden" /><input id="entry-id" type="hidden" />
-        <p class="eyebrow">Imported ability</p><h3>Edit HDC entry</h3>
-        <label id="entry-section-label" hidden>Section<select id="entry-new-section"><option value="skills">Skills</option><option value="perks">Perks</option><option value="talents">Talents</option><option value="martialarts">Martial Arts</option><option value="powers">Powers</option><option value="disadvantages">Disadvantages</option><option value="equipment">Equipment</option></select></label>
-        <div id="equipment-builder" hidden><label>Equipment type<select id="equipment-kind"></select></label><label>Effect / damage<input id="equipment-effect" placeholder="e.g. 8d6 Energy Blast" /></label><div class="power-numbers"><label>Quantity<input id="equipment-quantity" type="number" min="1" step="1" value="1" /></label><label>Weight (kg)<input id="equipment-weight" type="number" min="0" step="0.1" value="0" /></label><label class="check"><input id="equipment-carried" type="checkbox" checked /> Carried</label></div><div id="equipment-weapon-fields" class="power-numbers"><label>OCV modifier<input id="equipment-ocv" type="number" step="1" value="0" /></label><label>Range<input id="equipment-range" /></label></div><div id="equipment-armor-fields" class="power-numbers" hidden><label>Resistant PD<input id="equipment-pd" type="number" min="0" value="0" /></label><label>Resistant ED<input id="equipment-ed" type="number" min="0" value="0" /></label></div><div id="equipment-preview" class="power-preview"></div><small class="provisional">Equipment Character Point treatment is campaign-dependent and is not charged silently.</small></div><div id="disadvantage-builder" hidden><label>Fourth Edition Disadvantage<select id="disadvantage-key"></select></label><label id="disadvantage-levels-wrap">Levels<input id="disadvantage-levels" type="number" min="1" step="1" value="1" /></label><div id="disadvantage-options"></div><div id="disadvantage-preview" class="power-preview"></div></div><div id="simple-ability-builder" hidden><label>Fourth Edition <span id="simple-ability-kind">Talent</span><select id="simple-ability-key"></select></label><label>Levels / improvements<input id="simple-ability-levels" type="number" min="0" step="1" value="0" /></label><div id="simple-ability-preview" class="power-preview"></div></div><div id="skill-builder" hidden><label>Fourth Edition Skill<select id="skill-key"></select></label><div class="power-numbers"><label>Improvements (+1)<input id="skill-improvements" type="number" min="0" step="1" value="0" /></label><label class="check"><input id="skill-familiarity" type="checkbox" /> Familiarity (8−)</label><label id="skill-characteristic-wrap" class="check" hidden><input id="skill-characteristic" type="checkbox" /> Characteristic-based background skill</label></div><div id="skill-preview" class="power-preview"></div></div><div id="power-builder" hidden><label>Fourth Edition Power<select id="power-key"></select></label><label>Levels<input id="power-levels" type="number" min="1" step="1" value="1" /></label><div class="modifier-builder"><label>Advantage<select id="power-advantage-key"></select></label><div id="power-advantage-custom" class="power-numbers" hidden><label>Description<input id="power-advantage-name" placeholder="Custom Advantage" /></label><label>Value<input id="power-advantages" type="number" min="0" step="0.25" value="0" /></label></div><label>Limitation<select id="power-limitation-key"></select></label><div id="power-limitation-custom" class="power-numbers" hidden><label>Description<input id="power-limitation-name" placeholder="Custom Limitation" /></label><label>Value<input id="power-limitations" type="number" min="0" step="0.25" value="0" /></label></div></div><small class="provisional">The named catalog contains verified Fourth Edition modifiers. Use Custom for other rulebook entries.</small><div id="power-preview" class="power-preview"></div></div><label>Name<input id="entry-name" required /></label>
-        <label>Levels<input id="entry-levels" type="number" inputmode="numeric" /></label>
+        <input id="entry-section" type="hidden" /><input
+          id="entry-id"
+          type="hidden"
+        />
+        <p class="eyebrow">Imported ability</p>
+        <h3>Edit HDC entry</h3>
+        <label id="entry-section-label" hidden
+          >Section<select id="entry-new-section">
+            <option value="skills">Skills</option>
+            <option value="perks">Perks</option>
+            <option value="talents">Talents</option>
+            <option value="martialarts">Martial Arts</option>
+            <option value="powers">Powers</option>
+            <option value="disadvantages">Disadvantages</option>
+            <option value="equipment">Equipment</option>
+          </select></label
+        >
+        <div id="equipment-builder" hidden>
+          <label>Equipment type<select id="equipment-kind"></select></label
+          ><label
+            >Effect / damage<input
+              id="equipment-effect"
+              placeholder="e.g. 8d6 Energy Blast"
+          /></label>
+          <div class="power-numbers">
+            <label
+              >Quantity<input
+                id="equipment-quantity"
+                type="number"
+                min="1"
+                step="1"
+                value="1" /></label
+            ><label
+              >Weight (kg)<input
+                id="equipment-weight"
+                type="number"
+                min="0"
+                step="0.1"
+                value="0" /></label
+            ><label class="check"
+              ><input id="equipment-carried" type="checkbox" checked />
+              Carried</label
+            >
+          </div>
+          <div id="equipment-weapon-fields" class="power-numbers">
+            <label
+              >OCV modifier<input
+                id="equipment-ocv"
+                type="number"
+                step="1"
+                value="0" /></label
+            ><label>Range<input id="equipment-range" /></label>
+          </div>
+          <div id="equipment-armor-fields" class="power-numbers" hidden>
+            <label
+              >Resistant PD<input
+                id="equipment-pd"
+                type="number"
+                min="0"
+                value="0" /></label
+            ><label
+              >Resistant ED<input
+                id="equipment-ed"
+                type="number"
+                min="0"
+                value="0"
+            /></label>
+          </div>
+          <div id="equipment-preview" class="power-preview"></div>
+          <small class="provisional"
+            >Equipment Character Point treatment is campaign-dependent and is
+            not charged silently.</small
+          >
+        </div>
+        <div id="disadvantage-builder" hidden>
+          <label
+            >Fourth Edition Disadvantage<select
+              id="disadvantage-key"
+            ></select></label
+          ><label id="disadvantage-levels-wrap"
+            >Levels<input
+              id="disadvantage-levels"
+              type="number"
+              min="1"
+              step="1"
+              value="1"
+          /></label>
+          <div id="disadvantage-options"></div>
+          <div id="disadvantage-preview" class="power-preview"></div>
+        </div>
+        <div id="simple-ability-builder" hidden>
+          <label
+            >Fourth Edition <span id="simple-ability-kind">Talent</span
+            ><select id="simple-ability-key"></select></label
+          ><label
+            >Levels / improvements<input
+              id="simple-ability-levels"
+              type="number"
+              min="0"
+              step="1"
+              value="0"
+          /></label>
+          <div id="simple-ability-preview" class="power-preview"></div>
+        </div>
+        <div id="skill-builder" hidden>
+          <label>Fourth Edition Skill<select id="skill-key"></select></label>
+          <div class="power-numbers">
+            <label
+              >Improvements (+1)<input
+                id="skill-improvements"
+                type="number"
+                min="0"
+                step="1"
+                value="0" /></label
+            ><label class="check"
+              ><input id="skill-familiarity" type="checkbox" /> Familiarity
+              (8−)</label
+            ><label id="skill-characteristic-wrap" class="check" hidden
+              ><input id="skill-characteristic" type="checkbox" />
+              Characteristic-based background skill</label
+            >
+          </div>
+          <div id="skill-preview" class="power-preview"></div>
+        </div>
+        <div id="power-builder" hidden>
+          <label>Fourth Edition Power<select id="power-key"></select></label
+          ><label
+            >Levels<input
+              id="power-levels"
+              type="number"
+              min="1"
+              step="1"
+              value="1"
+          /></label>
+          <div class="modifier-builder">
+            <label>Advantage<select id="power-advantage-key"></select></label>
+            <div id="power-advantage-custom" class="power-numbers" hidden>
+              <label
+                >Description<input
+                  id="power-advantage-name"
+                  placeholder="Custom Advantage" /></label
+              ><label
+                >Value<input
+                  id="power-advantages"
+                  type="number"
+                  min="0"
+                  step="0.25"
+                  value="0"
+              /></label>
+            </div>
+            <label>Limitation<select id="power-limitation-key"></select></label>
+            <div id="power-limitation-custom" class="power-numbers" hidden>
+              <label
+                >Description<input
+                  id="power-limitation-name"
+                  placeholder="Custom Limitation" /></label
+              ><label
+                >Value<input
+                  id="power-limitations"
+                  type="number"
+                  min="0"
+                  step="0.25"
+                  value="0"
+              /></label>
+            </div>
+          </div>
+          <small class="provisional"
+            >The named catalog contains verified Fourth Edition modifiers. Use
+            Custom for other rulebook entries.</small
+          >
+          <div id="power-preview" class="power-preview"></div>
+        </div>
+        <label>Custom name (optional)<input id="entry-name" placeholder="Uses the selected rule name when blank" /></label>
+        <label
+          >Levels<input id="entry-levels" type="number" inputmode="numeric"
+        /></label>
         <label>Notes<textarea id="entry-notes" rows="5"></textarea></label>
-        <div id="entry-organize" class="organize-actions"><button id="move-entry-up" type="button" class="quiet">Move up</button><button id="move-entry-down" type="button" class="quiet">Move down</button><button id="delete-entry" type="button" class="danger">Delete</button></div><div class="dialog-actions"><button id="cancel-entry" type="button" class="quiet">Cancel</button><button type="submit" class="primary">Apply</button></div>
+        <div id="entry-organize" class="organize-actions">
+          <button id="move-entry-up" type="button" class="quiet">Move up</button
+          ><button id="move-entry-down" type="button" class="quiet">
+            Move down</button
+          ><button id="delete-entry" type="button" class="danger">
+            Delete
+          </button>
+        </div>
+        <div class="dialog-actions">
+          <button id="cancel-entry" type="button" class="quiet">Cancel</button
+          ><button type="submit" class="primary">Apply</button>
+        </div>
       </form>
     </dialog>
     <div id="toast" class="toast" role="status"></div>
     <script type="module" src="src/app.js"></script>
   </body>
 </html>
-
