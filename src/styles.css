@@ -806,6 +806,14 @@ button:active {
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+.bbb-reference {
+  display: block;
+  margin-top: 3px;
+  color: var(--text);
+  font-size: 0.72rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
 .entry-detail-dialog p,
 .rules-definition p {
   margin: 0;

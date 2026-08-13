@@ -8,6 +8,14 @@ const OTHER_DEFINITIONS={
   multipower:"A reserve shared by several related Powers. Only the reserve available to a slot may be used at one time.",elementalControl:"A group of closely related Powers sharing a common special effect and a purchased base.",vpp:"A flexible pool whose points may be assigned among Powers subject to its control restrictions.",jackOfAllTrades:"Reduces the cost of Professional Skills by one point each.",linguist:"Reduces the cost of Languages by one point each.",scholar:"Reduces the cost of Knowledge Skills by one point each.",scientist:"Reduces the cost of Science Skills by one point each.",traveler:"Reduces the cost of Area Knowledge Skills by one point each.",wellConnected:"Reduces the cost of Contacts and Favors by one point each.",normalCharacteristicMaxima:"Awards points when the character is subject to normal characteristic maxima.",unluck:"Represents recurring bad fortune; roll its dice when the GM determines it may complicate events.",psychologicalLimitation:"A belief, compulsion, or emotional response that restricts the character’s choices.",distinctiveFeatures:"An appearance or other trait that makes the character recognizable.",hunted:"An individual or organization actively pursues or interferes with the character.",dependentNpc:"A less capable person whose safety or needs create obligations for the character.",reputation:"A known identity or history that affects how others react to the character.",rivalry:"Competition with another person motivates the character and creates complications.",vulnerability:"The character suffers increased effect from a defined attack or phenomenon.",
 };
 const SECTION_FALLBACK={skills:"A learned ability resolved with the indicated HERO System Skill Roll.",powers:"A HERO System effect purchased with Active Points and modified to determine Real Cost.",talents:"An unusual innate aptitude purchased with Character Points.",perks:"A social, material, or organizational benefit purchased with Character Points.",martialarts:"A trained combat maneuver with defined OCV, DCV, damage, and effect.",disadvantages:"A defined complication that contributes points within campaign limits.",equipment:"An item carried or owned by the character; campaign rules determine any Character Point charge."};
+const SKILL_PAGES={acrobatics:21,acting:21,animalHandler:21,breakfall:21,bribery:21,bugging:21,bureaucratics:22,climbing:22,combatDriving:23,combatPiloting:23,computerProgramming:23,concealment:24,contortionist:24,conversation:24,criminology:25,cryptography:25,deduction:25,demolitions:25,disguise:25,electronics:25,forensicMedicine:26,forgery:26,gambling:26,highSociety:26,interrogation:27,inventor:27,knowledge:27,lipreading:29,lockpicking:29,mechanics:34,mimicry:34,navigation:34,oratory:34,paramedic:35,persuasion:35,professionalSkill:35,riding:36,science:37,securitySystems:37,seduction:37,shadowing:38,sleightOfHand:38,stealth:38,streetwise:38,survival:38,systemsOperation:39,tactics:39,tracking:39,trading:39,ventriloquism:40,weaponsmith:40};
+const TALENT_PAGES={absoluteTimeSense:47,ambidexterity:47,bumpOfDirection:47,combatSense:47,cramming:47,dangerSense:47,defenseManeuver:48,doubleJointed:48,eideticMemory:48,fastDraw:48,findWeakness:48,immunity:49,lightningCalculator:49,lightsleep:49,luck:49,perfectPitch:50,resistance:50,simulateDeath:50,speedReading:50,universalTranslator:50};
+const PERK_PAGES={contact8:43,contact11:43,contact:43,favor:43,follower:43,fringeBenefit:44,wellOff:44,wealthy:44,filthyRich:44,money:44,vehicleOrBase:45};
+const POWER_PAGES={armor:59,densityIncrease:62,energyBlast:65,flash:70,flashDefense:70,growth:72,handToHandAttack:73,invisibility:74,lackOfWeakness:75,mentalDefense:76,superleap:85};
+const FRAMEWORK_PAGES={elementalControl:112,multipower:114,vpp:116};
+const DISADVANTAGE_PAGES={dependentNpc:120,distinctiveFeatures:121,hunted:122,normalCharacteristicMaxima:122,psychologicalLimitation:123,reputation:125,rivalry:125,unluck:127,vulnerability:127};
+const MODIFIER_PAGES={armorPiercing:92,difficultToDispel:94,alwaysOn:102,handToHandAttack:73,requiresSkillRoll:110,"Armor Piercing":92,"Difficult To Dispel":94,"Always On":102,"Hand-To-Hand Attack":73,"Requires A Skill Roll":110};
+const SECTION_PAGES={skills:19,powers:58,talents:46,perks:42,martialarts:29,disadvantages:117,equipment:198};
 
 export function entryDefinition4e(section,entry){
   const key=entry?.mechanics?.key||entry?.mechanics?.kind||entry?.xmlId;
@@ -19,4 +27,12 @@ export function entryRoll4e(entry){
   if(Number.isFinite(roll))return `${roll}−`;
   if(entry?.mechanics?.modifiers?.some(modifier=>/skill roll/i.test(modifier.name)))return "Skill Roll required";
   return "None";
+}
+
+export function entryReference4e(section,entry){
+  const key=entry?.mechanics?.key||entry?.mechanics?.kind||entry?.xmlId;
+  let page=SKILL_PAGES[key]||TALENT_PAGES[key]||PERK_PAGES[key]||POWER_PAGES[key]||FRAMEWORK_PAGES[key]||DISADVANTAGE_PAGES[key];
+  if(entry?.mechanics?.isSkillEnhancer)page=41;
+  const pages=[page||SECTION_PAGES[section],...(entry?.mechanics?.modifiers||[]).map(modifier=>MODIFIER_PAGES[modifier.id||modifier.key||modifier.name]).filter(Boolean)];
+  return [...new Set(pages.filter(Boolean))].map(value=>`BBB, p. ${value}`).join("; ");
 }

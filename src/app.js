@@ -58,7 +58,7 @@ import {
   skillSummary,
 } from "./skills.js";
 import { preparePortrait } from "./images.js";
-import { entryDefinition4e, entryRoll4e } from "./descriptions.js";
+import { entryDefinition4e, entryReference4e, entryRoll4e } from "./descriptions.js";
 import {
   SKILL_ENHANCERS_4E,
   buildFramework4e,
@@ -608,6 +608,7 @@ function openEntryDetails(section, id) {
   $("#detail-points").textContent = String(entryPointCost(section, entry));
   $("#detail-roll").textContent = entryRoll4e(entry);
   $("#detail-definition").textContent = entryDefinition4e(section, entry);
+  $("#detail-reference").textContent = entryReference4e(section, entry);
   $("#detail-mechanics").textContent = entryMechanicsSummary(section, entry) || "No additional mechanics recorded.";
   $("#detail-notes").textContent = entry.notes || "No character-specific notes.";
   $("#detail-notes-wrap").hidden = !entry.notes;
@@ -629,6 +630,7 @@ function openEntryEditor(section, id) {
   $("#entry-cost-display").textContent = String(entryPointCost(section, entry));
   $("#entry-roll-display").textContent = entryRoll4e(entry);
   $("#entry-definition").textContent = entryDefinition4e(section, entry);
+  $("#entry-reference").textContent = entryReference4e(section, entry);
   $("#entry-notes").value = entry.notes || "";
   $("#entry-new-section").value = section;
   prepareExistingEntryBuilder(section, entry);
@@ -967,6 +969,7 @@ function updateEntryFacts(section, entry) {
   $("#entry-cost-display").textContent = String(cost);
   $("#entry-roll-display").textContent = entryRoll4e(entry);
   $("#entry-definition").textContent = entryDefinition4e(section, entry);
+  $("#entry-reference").textContent = entryReference4e(section, entry);
 }
 function prepareExistingEntryBuilder(section, entry) {
   const m=entry.mechanics||{};
