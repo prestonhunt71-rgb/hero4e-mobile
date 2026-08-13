@@ -33,6 +33,8 @@ export function exportHdc(character) {
   const bases = figured(character.characteristics);
   for (const key of primaryKeys) setAttribute(block?.getElementsByTagName(key)[0], "LEVELS", Number(character.characteristics[key]) - primaryDefinitions[key][0]);
   for (const key of figuredKeys) setAttribute(block?.getElementsByTagName(key)[0], "LEVELS", Number(character.characteristics[key]) - bases[key]);
+  const sectionTags={skills:"SKILLS",perks:"PERKS",talents:"TALENTS",martialarts:"MARTIALARTS",powers:"POWERS",disadvantages:"DISADVANTAGES",equipment:"EQUIPMENT"};
+  for(const [key,tag] of Object.entries(sectionTags)){const section=root?.getElementsByTagName(tag)[0];if(!section)continue;const entries=character.sections?.[key]||[];const byId=new Map(entries.map(entry=>[String(entry.id),entry]));for(const node of Array.from(section.childNodes).filter(node=>node.nodeType===1)){if(!byId.has(attribute(node,"ID")))node.remove();}for(const entry of entries){const node=Array.from(section.childNodes).find(candidate=>candidate.nodeType===1&&attribute(candidate,"ID")===String(entry.id));if(node)section.appendChild(node);}}
   for (const entries of Object.values(character.sections || {})) for (const entry of entries) {
     const node = Array.from(root?.getElementsByTagName(entry.tag || "*") || []).find((candidate) => attribute(candidate, "ID") === String(entry.id));
     if (!node) continue;

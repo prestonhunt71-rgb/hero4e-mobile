@@ -26,6 +26,7 @@
           <p>Import a Hero Designer character or create a Fourth Edition character on this device.</p>
           <div class="actions">
             <label class="button primary">Import HDC<input id="hdc-input" type="file" accept=".hdc,text/xml,application/xml" hidden /></label>
+            <label class="button">Import HERO4E<input id="json-input" type="file" accept=".hero4e,.json,application/json" hidden /></label>
             <button id="new-character">New character</button>
             <button id="sample-character" class="quiet">Import Iron Wolf sample</button>
           </div>
@@ -36,14 +37,14 @@
       <section id="sheet-view" class="view">
         <div class="sheet-heading">
           <button id="back-button" class="icon-button" aria-label="Back">&lsaquo;</button>
-          <div><p class="eyebrow">Character sheet</p><h2 id="character-name">Hero</h2></div>
-          <div class="sheet-actions"><button id="export-hdc" class="quiet" hidden>Export HDC</button><button id="save-button" class="quiet">Save</button></div>
+          <button id="identity-button" class="identity-heading"><p class="eyebrow">Character sheet</p><h2 id="character-name">Hero</h2><small id="player-name"></small></button>
+          <div class="sheet-actions"><button id="export-json" class="quiet">Export HERO4E</button><button id="export-hdc" class="quiet" hidden>Export HDC</button><button id="save-button" class="quiet">Save</button></div>
         </div>
         <div id="import-notice" class="notice" hidden></div>
         <div class="resource-row" id="resources"></div>
         <section class="panel"><div class="panel-title"><h3>Characteristics</h3><span id="characteristic-cost"></span></div><div id="characteristics" class="stat-grid"></div></section>
         <section class="panel"><div class="panel-title"><h3>Combat values</h3></div><div id="combat-values" class="stat-grid compact"></div></section>
-        <section class="panel" id="abilities-panel" hidden><div class="panel-title"><h3>Abilities</h3><span id="ability-count"></span></div><div id="ability-sections" class="entry-sections"></div></section>
+        <section class="panel" id="abilities-panel" hidden><div class="panel-title"><h3>Abilities</h3><div><span id="ability-count"></span><button id="add-entry" class="mini" hidden>Add</button></div></div><div id="ability-sections" class="entry-sections"></div></section>
         <section class="panel"><div class="panel-title"><h3>Dice</h3></div><div class="dice-controls"><button data-roll="3d6">3d6 roll</button><button data-roll="normal">Normal damage</button><button data-roll="killing">Killing damage</button></div><div id="roll-result" class="roll-result">Choose a roll.</div></section>
       </section>
     </main>
@@ -51,14 +52,16 @@
       <button class="active" data-nav="library-view"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 3 9l9 5 9-5-9-6Zm-7 9 7 4 7-4v5l-7 4-7-4v-5Z"/></svg></span>Characters</button>
       <button data-nav="sheet-view"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm2 4v2h8V7H8Zm0 4v2h8v-2H8Zm0 4v2h5v-2H8Z"/></svg></span>Sheet</button>
     </nav>
+    <dialog id="identity-dialog" class="entry-dialog"><form id="identity-form"><p class="eyebrow">Character</p><h3>Edit identity</h3><label>Character name<input id="identity-name" required /></label><label>Player name<input id="identity-player" /></label><div class="dialog-actions"><button id="cancel-identity" type="button" class="quiet">Cancel</button><button type="submit" class="primary">Apply</button></div></form></dialog>
     <dialog id="entry-dialog" class="entry-dialog">
       <form id="entry-form">
         <input id="entry-section" type="hidden" /><input id="entry-id" type="hidden" />
         <p class="eyebrow">Imported ability</p><h3>Edit HDC entry</h3>
+        <label id="entry-section-label" hidden>Section<select id="entry-new-section"><option value="skills">Skills</option><option value="perks">Perks</option><option value="talents">Talents</option><option value="martialarts">Martial Arts</option><option value="powers">Powers</option><option value="disadvantages">Disadvantages</option><option value="equipment">Equipment</option></select></label>
         <label>Name<input id="entry-name" required /></label>
         <label>Levels<input id="entry-levels" type="number" inputmode="numeric" /></label>
         <label>Notes<textarea id="entry-notes" rows="5"></textarea></label>
-        <div class="dialog-actions"><button id="cancel-entry" type="button" class="quiet">Cancel</button><button type="submit" class="primary">Apply</button></div>
+        <div id="entry-organize" class="organize-actions"><button id="move-entry-up" type="button" class="quiet">Move up</button><button id="move-entry-down" type="button" class="quiet">Move down</button><button id="delete-entry" type="button" class="danger">Delete</button></div><div class="dialog-actions"><button id="cancel-entry" type="button" class="quiet">Cancel</button><button type="submit" class="primary">Apply</button></div>
       </form>
     </dialog>
     <div id="toast" class="toast" role="status"></div>
