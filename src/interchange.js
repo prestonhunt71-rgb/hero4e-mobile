@@ -3,7 +3,7 @@ import { normalizeCharacter } from "./rules.js";
 export const INTERCHANGE_FORMAT="hero4e-mobile-character";
 export const INTERCHANGE_VERSION=1;
 export function exportCharacterJson(character){
-  const payload=structuredClone(character); delete payload.preservedHdc;
+  const payload=structuredClone(character); delete payload.preservedHdc; for(const entries of Object.values(payload.sections||{}))for(const entry of entries)delete entry.rawXml;
   return JSON.stringify({format:INTERCHANGE_FORMAT,version:INTERCHANGE_VERSION,exportedAt:new Date().toISOString(),character:payload},null,2);
 }
 export function importCharacterJson(text){
