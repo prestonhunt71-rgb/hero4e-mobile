@@ -2,6 +2,7 @@
 import { importHdc, exportHdc as buildHdc } from "./hdc.js";
 import { getCharacter, loadCharacters, saveCharacter } from "./store.js";
 import { exportCharacterJson, importCharacterJson } from "./interchange.js";
+import { exportFoundryActorJson } from "./foundry.js";
 let current=null; let installPrompt=null;
 const $=(selector)=>document.querySelector(selector);
 function show(view){ document.querySelectorAll(".view").forEach((node)=>node.classList.toggle("active",node.id===view)); document.querySelectorAll("[data-nav]").forEach((node)=>node.classList.toggle("active",node.dataset.nav===view)); }
@@ -19,6 +20,7 @@ function openCharacter(id){ current=getCharacter(id); renderSheet(); show("sheet
 function createCharacter(){ current=normalizeCharacter({name:"New Hero"}); saveCharacter(current); renderLibrary(); renderSheet(); show("sheet-view"); }
 function downloadFile(text,filename,type){ const file=new File([text],filename,{type}); const url=URL.createObjectURL(file); const link=document.createElement("a"); link.href=url; link.download=filename; document.body.append(link); link.click(); link.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000); return file; }
 async function exportJson(){ const filename=`${current.name.replace(/[\/:*?"<>|]/g,"-")}.hero4e`; const text=exportCharacterJson(current); const file=new File([text],filename,{type:"application/json"}); try{if(navigator.canShare?.({files:[file]})){await navigator.share({title:`${current.name} HERO4E`,files:[file]});return;}}catch(error){if(error.name==="AbortError")return;} downloadFile(text,filename,"application/json"); toast("HERO4E character downloaded");}
+function exportFoundry(){const filename=`fvtt-Actor-${current.name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"hero"}.json`;downloadFile(exportFoundryActorJson(current),filename,"application/json");toast("Foundry Actor downloaded");}
 async function exportHdc(){ if(!current?.preservedHdc){toast("This character has no preserved HDC source");return;} const hdcText=buildHdc(current); const filename=`${current.name.replace(/[\/:*?"<>|]/g,"-")}.hdc`; const file=new File([hdcText],filename,{type:"application/xml"}); try{ if(navigator.canShare?.({files:[file]})){ await navigator.share({title:`${current.name} HDC`,files:[file]}); toast("HDC shared"); return; } }catch(error){ if(error.name==="AbortError")return; console.warn(error); } const url=URL.createObjectURL(file); const link=document.createElement("a"); link.href=url; link.download=filename; document.body.append(link); link.click(); link.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000); toast("HDC downloaded"); }
 function openEntryEditor(section,id){
   const entry=(current.sections?.[section]||[]).find((item)=>String(item.id)===String(id)); if(!entry)return;
@@ -30,7 +32,7 @@ $("#move-entry-up").addEventListener("click",()=>moveEntry(-1)); $("#move-entry-
 $("#delete-entry").addEventListener("click",()=>{const section=$("#entry-section").value;current.sections[section]=(current.sections?.[section]||[]).filter(e=>String(e.id)!==String($("#entry-id").value));markHdcDirty();$("#entry-dialog").close();renderEntries();toast("Ability removed — export creates updated HDC");});
 $("#add-entry").addEventListener("click",()=>{$("#entry-dialog").dataset.mode="new";$("#entry-section-label").hidden=false;$("#entry-organize").hidden=true;$("#entry-section").value="";$("#entry-id").value="";$("#entry-name").value="";$("#entry-levels").value=0;$("#entry-notes").value="";$("#entry-dialog").showModal();});
 $("#cancel-entry").addEventListener("click",()=>$("#entry-dialog").close());
-$("#export-json").addEventListener("click",exportJson); $("#export-hdc").addEventListener("click",exportHdc);
+$("#export-json").addEventListener("click",exportJson); $("#export-foundry").addEventListener("click",exportFoundry); $("#export-hdc").addEventListener("click",exportHdc);
 $("#identity-button").addEventListener("click",()=>{$("#identity-name").value=current.name;$("#identity-player").value=current.playerName||"";$("#identity-dialog").showModal();});
 $("#identity-form").addEventListener("submit",event=>{event.preventDefault();current.name=$("#identity-name").value.trim()||current.name;current.playerName=$("#identity-player").value.trim();markHdcDirty();$("#identity-dialog").close();renderSheet();toast("Identity updated — save the character");}); $("#cancel-identity").addEventListener("click",()=>$("#identity-dialog").close());
 $("#new-character").addEventListener("click",createCharacter); $("#back-button").addEventListener("click",()=>{renderLibrary();show("library-view")}); $("#save-button").addEventListener("click",()=>{ current.updatedAt=new Date().toISOString(); saveCharacter(current); toast("Character saved on this device"); renderLibrary(); });
