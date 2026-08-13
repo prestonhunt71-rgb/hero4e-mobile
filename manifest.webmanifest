@@ -7,5 +7,9 @@
   "background_color": "#07111f",
   "theme_color": "#101b2d",
   "orientation": "any",
-  "icons": [{ "src": "icons/hero4e.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+  "icons": [
+    { "src": "icons/hero4e-180.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
+    { "src": "icons/hero4e-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/hero4e.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
 }
