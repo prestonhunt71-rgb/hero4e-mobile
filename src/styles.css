@@ -390,6 +390,19 @@ button:active {
 .sheet-jump button:first-child {
   background: var(--red);
 }
+.sheet-jump button.active {
+  background: var(--yellow);
+  color: #17130a;
+}
+.sheet-section-page {
+  display: none !important;
+}
+.sheet-section-page.sheet-page-active {
+  display: block !important;
+}
+.resource-row.sheet-page-active {
+  display: grid !important;
+}
 .resource-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -784,6 +797,59 @@ button:active {
   margin: 4px 0 16px;
   font: 900 1.5rem var(--display);
   text-transform: uppercase;
+}
+.entry-detail-dialog h4,
+.rules-definition h4 {
+  margin: 18px 0 6px;
+  font: 900 0.78rem var(--comic);
+  color: var(--yellow);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.entry-detail-dialog p,
+.rules-definition p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.detail-facts {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.detail-facts div,
+.form-fact {
+  background: #091728;
+  border: 3px solid #05080b;
+  padding: 11px;
+}
+.detail-facts span,
+.detail-facts strong,
+.form-fact span,
+.form-fact strong {
+  display: block;
+}
+.detail-facts span,
+.form-fact span {
+  color: var(--muted);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+.detail-facts strong,
+.form-fact strong {
+  margin-top: 3px;
+  font: 900 1.35rem var(--display);
+  color: var(--text);
+}
+.rules-definition {
+  margin-top: 12px;
+  padding: 1px 12px 12px;
+  background: #0b1822;
+  border-left: 5px solid var(--yellow);
+}
+.form-fact {
+  margin-top: 12px;
 }
 .entry-dialog label {
   display: block;

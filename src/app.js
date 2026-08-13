@@ -58,6 +58,7 @@ import {
   skillSummary,
 } from "./skills.js";
 import { preparePortrait } from "./images.js";
+import { entryDefinition4e, entryRoll4e } from "./descriptions.js";
 import {
   SKILL_ENHANCERS_4E,
   buildFramework4e,
@@ -78,6 +79,8 @@ import {
 } from "./combat.js";
 let current = null;
 let installPrompt = null;
+let currentSheetPage = "stats";
+let selectedEntry = null;
 const $ = (selector) => document.querySelector(selector);
 function show(view) {
   document
@@ -94,6 +97,28 @@ function toast(message) {
   node.textContent = message;
   node.classList.add("show");
   setTimeout(() => node.classList.remove("show"), 2200);
+}
+function setupSheetPages() {
+  const profile = $("#profile-panel"), characteristics = $(".characteristics-panel"), combat = $(".combat-panel"), dice = $(".dice-controls")?.closest(".panel");
+  const groups = {
+    stats: [$("#resources"), characteristics, characteristics?.nextElementSibling, characteristics?.nextElementSibling?.nextElementSibling],
+    abilities: [$("#abilities-panel")],
+    combat: [combat],
+    dice: [dice],
+    profile: [profile, profile?.nextElementSibling],
+  };
+  for (const [page, nodes] of Object.entries(groups)) for (const node of nodes.filter(Boolean)) {
+    node.classList.add("sheet-section-page");
+    node.dataset.sheetPage = page;
+  }
+  const pageOrder = ["stats", "abilities", "combat", "dice", "profile"];
+  document.querySelectorAll("[data-jump]").forEach((button, index) => button.dataset.page = pageOrder[index]);
+}
+function showSheetPage(page) {
+  currentSheetPage = page;
+  document.querySelectorAll("[data-sheet-page]").forEach(node => node.classList.toggle("sheet-page-active", node.dataset.sheetPage === page));
+  document.querySelectorAll("[data-jump]").forEach(button => button.classList.toggle("active", button.dataset.page === page));
+  window.scrollTo({top: 0, behavior: "auto"});
 }
 function renderLibrary() {
   const query = $("#character-search")?.value.trim().toLowerCase() || "",
@@ -170,6 +195,19 @@ function entryMechanicsSummary(section, entry) {
   if (section === "equipment") return equipmentSummary(entry);
   return "";
 }
+function entryPointCost(section, entry) {
+  if (entry.mechanics?.isFramework) {
+    const result = frameworkCost4e(entry, current.sections?.powers || []);
+    return result.total;
+  }
+  if (section === "powers") return Number(entry.mechanics?.realCost ?? entry.baseCost ?? 0);
+  if (section === "skills") {
+    const enhancers=(current.sections?.talents||[]).filter(item=>item.mechanics?.isSkillEnhancer);
+    return Math.max(0,Number(entry.mechanics?.cost??entry.baseCost??0)-skillEnhancerDiscount4e(entry,enhancers));
+  }
+  if (section === "equipment") return entry.mechanics?.characterCost == null ? "Campaign" : Number(entry.mechanics.characterCost);
+  return Number(entry.mechanics?.cost ?? entry.baseCost ?? 0);
+}
 function renderEntries() {
   syncFrameworkCosts();
   const labels = sectionLabels();
@@ -179,19 +217,19 @@ function renderEntries() {
   const total = groups.reduce((sum, [, entries]) => sum + entries.length, 0);
   $("#abilities-panel").hidden = !total && Boolean(current.preservedHdc);
   $("#ability-count").textContent = total
-    ? `${total} ${current.preservedHdc ? "imported " : ""}entries`
-    : "No abilities yet";
+    ? `${total} ${current.preservedHdc ? "imported " : ""}items`
+    : "No Skills, Perks, Talents, Martial Arts, Powers, Disadvantages, or Equipment yet";
   $("#ability-sections").innerHTML = groups
     .map(
       ([key, entries]) =>
-        `<details ${key === "skills" || key === "powers" ? "open" : ""}><summary>${labels[key] || key} <span>${entries.length}</span></summary><div class="entry-list">${entries.map((entry) => `<button class="entry" data-entry-section="${key}" data-entry-id="${escapeHtml(entry.id)}"><strong>${escapeHtml(entry.name || entry.alias || "Unnamed entry")}</strong><small>${escapeHtml([entry.alias !== entry.name ? entry.alias : "", entry.option, entry.levels && !entry.mechanics?.isFramework ? `Levels ${entry.levels}` : "", entry.mechanics ? entryMechanicsSummary(key, entry) : ""].filter(Boolean).join(" · "))}</small></button>`).join("")}</div></details>`,
+        `<details ${key === "skills" || key === "powers" ? "open" : ""}><summary>${labels[key] || key} <span>${entries.length}</span></summary><div class="entry-list">${entries.map((entry) => `<button class="entry" data-entry-section="${key}" data-entry-id="${escapeHtml(entry.id)}"><strong>${escapeHtml(entry.name || entry.alias || "Unnamed " + (labels[key] || "item"))}</strong><small>${escapeHtml([entry.alias !== entry.name ? entry.alias : "", entry.option, entry.mechanics ? entryMechanicsSummary(key, entry) : ""].filter(Boolean).join(" · "))}</small></button>`).join("")}</div></details>`,
     )
     .join("");
   document
     .querySelectorAll("[data-entry-id]")
     .forEach((node) =>
       node.addEventListener("click", () =>
-        openEntryEditor(node.dataset.entrySection, node.dataset.entryId),
+        openEntryDetails(node.dataset.entrySection, node.dataset.entryId),
       ),
     );
   $("#export-hdc").hidden = !current.preservedHdc;
@@ -232,7 +270,7 @@ function renderProfile() {
       Number(points.base || 0) +
       creditedDisadvantages +
       Number(points.experience || 0);
-  $("#point-summary").textContent = available + " available";
+  $("#point-summary").textContent = available + " Character Points available";
   const knownPowers = (current.sections?.powers || []).reduce(
       (sum, entry) => sum + (Number(entry.mechanics?.realCost) || 0),
       0,
@@ -253,13 +291,13 @@ function renderProfile() {
       knownAbilities,
     balance = available - knownSpent;
   $("#point-grid").innerHTML = [
-    ["Base", points.base],
-    ["Disad allowance", points.disadvantages],
-    ["Known disads", earnedDisadvantages],
+    ["Base Character Points", points.base],
+    ["Maximum Disadvantage Points", points.disadvantages],
+    ["Disadvantage Points", earnedDisadvantages],
     ["Experience", points.experience],
     ["Available", available],
-    ["Known spent", knownSpent],
-    ["Provisional balance", balance],
+    ["Character Points spent", knownSpent],
+    ["Character Points remaining", balance],
   ]
     .map(
       ([label, value]) =>
@@ -409,6 +447,7 @@ function renderSheet() {
   renderEntries();
   renderProfile();
   renderCombat();
+  showSheetPage(currentSheetPage);
   const notice = $("#import-notice");
   notice.hidden = !current.warnings.length;
   notice.textContent = current.warnings[0] || "";
@@ -464,12 +503,14 @@ function updateStat(event) {
   renderDerived();
 }
 function openCharacter(id) {
+  currentSheetPage = "stats";
   current = normalizeCharacter(getCharacter(id));
   saveCharacter(current);
   renderSheet();
   show("sheet-view");
 }
 function createCharacter() {
+  currentSheetPage = "stats";
   current = normalizeCharacter({ name: "New Hero" });
   saveCharacter(current);
   renderLibrary();
@@ -555,21 +596,50 @@ async function exportHdc() {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
   toast("HDC downloaded");
 }
+function findEntry(section, id) {
+  return (current.sections?.[section] || []).find((item) => String(item.id) === String(id));
+}
+function openEntryDetails(section, id) {
+  const entry = findEntry(section, id);
+  if (!entry) return;
+  selectedEntry = {section, id};
+  $("#detail-category").textContent = sectionLabels()[section] || section;
+  $("#detail-name").textContent = entry.name || entry.alias || "Unnamed entry";
+  $("#detail-points").textContent = String(entryPointCost(section, entry));
+  $("#detail-roll").textContent = entryRoll4e(entry);
+  $("#detail-definition").textContent = entryDefinition4e(section, entry);
+  $("#detail-mechanics").textContent = entryMechanicsSummary(section, entry) || "No additional mechanics recorded.";
+  $("#detail-notes").textContent = entry.notes || "No character-specific notes.";
+  $("#detail-notes-wrap").hidden = !entry.notes;
+  $("#entry-detail-dialog").showModal();
+}
 function openEntryEditor(section, id) {
-  const entry = (current.sections?.[section] || []).find(
-    (item) => String(item.id) === String(id),
-  );
+  const entry = findEntry(section, id);
   if (!entry) return;
   $("#entry-dialog").dataset.mode = "edit";
   $("#entry-section-label").hidden = true;
   $("#entry-organize").hidden = false;
+  $("#entry-category-heading").textContent = sectionLabels()[section] || section;
+  $("#entry-form-heading").textContent = `Edit ${entry.name || entry.alias || sectionLabels()[section] || "Character Ability"}`;
   $("#entry-section").value = section;
   $("#entry-id").value = id;
   $("#entry-name").value = entry.name || "";
-  $("#entry-levels").value = entry.levels || 0;
+  $("#entry-levels").value = entryPointCost(section, entry);
+  $("#entry-levels").readOnly = true;
+  $("#entry-cost-display").textContent = String(entryPointCost(section, entry));
+  $("#entry-roll-display").textContent = entryRoll4e(entry);
+  $("#entry-definition").textContent = entryDefinition4e(section, entry);
   $("#entry-notes").value = entry.notes || "";
+  $("#entry-new-section").value = section;
+  prepareExistingEntryBuilder(section, entry);
   $("#entry-dialog").showModal();
 }
+$("#close-entry-detail").addEventListener("click", () => $("#entry-detail-dialog").close());
+$("#edit-entry-detail").addEventListener("click", () => {
+  if (!selectedEntry) return;
+  $("#entry-detail-dialog").close();
+  openEntryEditor(selectedEntry.section, selectedEntry.id);
+});
 $("#entry-form").addEventListener("submit", (event) => {
   event.preventDefault();
   let section = $("#entry-section").value;
@@ -651,33 +721,35 @@ $("#entry-form").addEventListener("submit", (event) => {
   }
   if (!entry) return;
   entry.name = $("#entry-name").value.trim() || entry.name;
-  if ($("#entry-dialog").dataset.mode !== "new")
-    entry.levels = Number($("#entry-levels").value || 0);
-  if (
-    section === "powers" &&
-    entry.mechanics &&
-    !entry.mechanics.isFramework &&
-    $("#entry-dialog").dataset.mode !== "new"
-  )
-    entry.mechanics = {
-      ...entry.mechanics,
-      ...calculatePowerCost4e(entry.mechanics.key, entry.levels, {
-        advantages: entry.mechanics.advantages,
-        limitations: entry.mechanics.limitations,
-      }),
-      effect: entry.levels + " " + entry.mechanics.unit,
-    };
-  if (entry.mechanics?.isFramework && $("#entry-dialog").dataset.mode !== "new") {
-    entry.mechanics.points = entry.levels;
-    entry.baseCost = entry.levels;
-  }
+  if ($("#entry-dialog").dataset.mode !== "new") updateExistingEntryFromForm(section, entry);
   entry.notes = $("#entry-notes").value;
   markHdcDirty();
   $("#entry-dialog").close();
   renderEntries();
   renderProfile();
-  toast("Ability updated — save the character");
+  toast(`${sectionLabels()[section] || "Character ability"} updated — save the character`);
 });
+function updateExistingEntryFromForm(section, entry) {
+  if (section === "skills" && SKILLS_4E[$("#skill-key").value]) {
+    entry.mechanics = calculateSkill4e($("#skill-key").value, current.characteristics, {improvements:Number($("#skill-improvements").value||0),familiarity:$("#skill-familiarity").checked,characteristicBased:$("#skill-characteristic").checked});
+    entry.xmlId = $("#skill-key").value; entry.levels = entry.mechanics.improvements; entry.baseCost = entry.mechanics.cost;
+  } else if (section === "powers" && !entry.mechanics?.isFramework && POWER_CATALOG_4E[$("#power-key").value]) {
+    const advantage=selectedModifier("advantage"), limitation=selectedModifier("limitation"), frameworkId=$("#power-framework").value||undefined,framework=(current.sections?.powers||[]).find(item=>item.id===frameworkId),preserved={frameworkId,frameworkName:framework?.name,slotKind:framework?.mechanics?.kind==="multipower"?$("#power-slot-kind").value:frameworkId?"framework":undefined};
+    entry.levels=Number($("#power-levels").value||1); entry.xmlId=$("#power-key").value;
+    entry.mechanics={...calculatePowerCost4e(entry.xmlId,entry.levels,{advantages:Math.abs(advantage?.value||0),limitations:Math.abs(limitation?.value||0)}),effect:entry.levels+" "+POWER_CATALOG_4E[entry.xmlId].unit,modifiers:[advantage,limitation].filter(Boolean),status:"converted",pricingBasis:"Fourth Edition",...Object.fromEntries(Object.entries(preserved).filter(([,value])=>value))};
+    entry.baseCost=entry.mechanics.baseCost;
+  } else if ((section === "talents" || section === "perks") && !entry.mechanics?.isSkillEnhancer) {
+    const key=$("#simple-ability-key").value,levels=Number($("#simple-ability-levels").value||0),mechanics=section==="talents"?calculateTalent4e(key,current.characteristics,levels):calculatePerk4e(key,levels);
+    entry.xmlId=key;entry.levels=levels;entry.mechanics=mechanics;entry.baseCost=mechanics.cost;
+  } else if (section === "disadvantages" && DISADVANTAGES_4E[$("#disadvantage-key").value]) {
+    const key=$("#disadvantage-key").value,selections=[...document.querySelectorAll("[data-disadvantage-option]")].map(node=>node.value),mechanics=calculateDisadvantage4e(key,{levels:Number($("#disadvantage-levels").value||1),selections});
+    entry.xmlId=key;entry.levels=mechanics.levels;entry.mechanics=mechanics;entry.baseCost=mechanics.cost;entry.option=mechanics.detail;
+  } else if (section === "equipment") {
+    const rebuilt=buildEquipment4e({kind:$("#equipment-kind").value,name:entry.name,effect:$("#equipment-effect").value,quantity:$("#equipment-quantity").value,weight:$("#equipment-weight").value,carried:$("#equipment-carried").checked,ocv:$("#equipment-ocv").value,range:$("#equipment-range").value,pd:$("#equipment-pd").value,ed:$("#equipment-ed").value,notes:entry.notes});
+    entry.xmlId=rebuilt.xmlId;entry.levels=rebuilt.levels;entry.mechanics=rebuilt.mechanics;entry.baseCost=rebuilt.baseCost;
+  }
+  syncFrameworkCosts();
+}
 function moveEntry(delta) {
   const section = $("#entry-section").value,
     entries = current.sections?.[section] || [],
@@ -715,9 +787,7 @@ $("#delete-entry").addEventListener("click", () => {
   toast("Ability removed — export creates updated HDC");
 });
 function updateEquipmentBuilder() {
-  const visible =
-    $("#entry-dialog").dataset.mode === "new" &&
-    $("#entry-new-section").value === "equipment";
+  const visible = $("#entry-new-section").value === "equipment";
   $("#equipment-builder").hidden = !visible;
   if (!visible) return;
   const kind = $("#equipment-kind").value;
@@ -736,11 +806,10 @@ function updateEquipmentBuilder() {
     ed: $("#equipment-ed").value,
   });
   $("#equipment-preview").textContent = equipmentSummary(e);
+  updateEntryFacts("equipment", e);
 }
 function updateDisadvantageBuilder(rebuild = false) {
-  const visible =
-    $("#entry-dialog").dataset.mode === "new" &&
-    $("#entry-new-section").value === "disadvantages";
+  const visible = $("#entry-new-section").value === "disadvantages";
   $("#disadvantage-builder").hidden = !visible;
   if (!visible) return;
   const key = $("#disadvantage-key").value,
@@ -786,12 +855,11 @@ function updateDisadvantageBuilder(rebuild = false) {
   $("#disadvantage-preview").textContent = [d.detail, d.cost + " points"]
     .filter(Boolean)
     .join(" · ");
+  updateEntryFacts("disadvantages", {mechanics:d, xmlId:key});
 }
 function updateSimpleAbilityBuilder() {
   const section = $("#entry-new-section").value,
-    visible =
-      $("#entry-dialog").dataset.mode === "new" &&
-      (section === "talents" || section === "perks");
+    visible = section === "talents" || section === "perks";
   $("#simple-ability-builder").hidden = !visible;
   if (!visible) return;
   const catalog = section === "talents" ? TALENTS_4E : PERKS_4E,
@@ -818,14 +886,13 @@ function updateSimpleAbilityBuilder() {
     $("#simple-ability-preview").textContent = [a.detail, a.cost + " points"]
       .filter(Boolean)
       .join(" · ");
+    updateEntryFacts(section, {mechanics:a, xmlId:select.value});
   } catch (error) {
     $("#simple-ability-preview").textContent = error.message;
   }
 }
 function updateSkillBuilder() {
-  const visible =
-    $("#entry-dialog").dataset.mode === "new" &&
-    $("#entry-new-section").value === "skills";
+  const visible = $("#entry-new-section").value === "skills";
   $("#skill-builder").hidden = !visible;
   if (!visible) return;
   const definition = SKILLS_4E[$("#skill-key").value],
@@ -842,6 +909,7 @@ function updateSkillBuilder() {
       s.roll + "−",
       s.cost + " points",
     ].join(" · ");
+    updateEntryFacts("skills", {mechanics:s, xmlId:$("#skill-key").value});
   } catch (error) {
     $("#skill-preview").textContent = error.message;
   }
@@ -856,11 +924,9 @@ function selectedModifier(kind) {
   return resolvePowerModifier4e(kind, key, value, name);
 }
 function updatePowerBuilder() {
-  const visible =
-    $("#entry-dialog").dataset.mode === "new" &&
-    $("#entry-new-section").value === "powers";
+  const editingFramework = $("#entry-dialog").dataset.mode === "edit" && findEntry($("#entry-section").value, $("#entry-id").value)?.mechanics?.isFramework;
+  const visible = $("#entry-new-section").value === "powers" && !editingFramework;
   $("#power-builder").hidden = !visible;
-  $("#entry-levels").closest("label").hidden = visible;
   if (!visible) return;
   const advantage = selectedModifier("advantage"),
     limitation = selectedModifier("limitation");
@@ -889,9 +955,34 @@ function updatePowerBuilder() {
     ]
       .filter(Boolean)
       .join(" · ");
+    updateEntryFacts("powers", {mechanics:{...p,modifiers:[advantage,limitation].filter(Boolean),status:"converted"},xmlId:$("#power-key").value});
   } catch (error) {
     $("#power-preview").textContent = error.message;
   }
+}
+function updateEntryFacts(section, entry) {
+  const cost = entryPointCost(section, entry);
+  $("#entry-levels").value = cost;
+  $("#entry-levels").readOnly = true;
+  $("#entry-cost-display").textContent = String(cost);
+  $("#entry-roll-display").textContent = entryRoll4e(entry);
+  $("#entry-definition").textContent = entryDefinition4e(section, entry);
+}
+function prepareExistingEntryBuilder(section, entry) {
+  const m=entry.mechanics||{};
+  for(const id of ["equipment-builder","disadvantage-builder","simple-ability-builder","skill-builder","power-builder","special-builder"]) $("#"+id).hidden=true;
+  if(section==="skills"&&SKILLS_4E[m.key]){
+    $("#skill-key").value=m.key;$("#skill-improvements").value=m.improvements??entry.levels??0;$("#skill-familiarity").checked=Boolean(m.familiarity);$("#skill-characteristic").checked=Boolean(m.characteristicBased);updateSkillBuilder();
+  }else if(section==="powers"&&!m.isFramework&&POWER_CATALOG_4E[m.key]){
+    $("#power-key").value=m.key;$("#power-levels").value=entry.levels||m.levels||1;
+    $("#power-advantage-key").value=m.advantages?"custom":"none";$("#power-limitation-key").value=m.limitations?"custom":"none";$("#power-advantages").value=m.advantages||0;$("#power-limitations").value=m.limitations||0;$("#power-advantage-name").value=(m.modifiers||[]).find(mod=>mod.kind==="advantage")?.name||"Advantages";$("#power-limitation-name").value=(m.modifiers||[]).find(mod=>mod.kind==="limitation")?.name||"Limitations";refreshFrameworkChoices();if(m.frameworkId)$("#power-framework").value=m.frameworkId;if(m.slotKind)$("#power-slot-kind").value=m.slotKind;updatePowerBuilder();
+  }else if((section==="talents"||section==="perks")&&!m.isSkillEnhancer&&((section==="talents"?TALENTS_4E:PERKS_4E)[m.key])){
+    updateSimpleAbilityBuilder();$("#simple-ability-key").value=m.key;$("#simple-ability-levels").value=m.levels??entry.levels??0;updateSimpleAbilityBuilder();
+  }else if(section==="disadvantages"&&DISADVANTAGES_4E[m.key]){
+    $("#disadvantage-key").value=m.key;$("#disadvantage-levels").value=m.levels||entry.levels||1;updateDisadvantageBuilder(true);[...document.querySelectorAll("[data-disadvantage-option]")].forEach((node,index)=>{if(m.selections?.[index])node.value=m.selections[index]});updateDisadvantageBuilder();
+  }else if(section==="equipment"&&m.kind){
+    $("#equipment-kind").value=m.kind;$("#equipment-effect").value=m.effect||"";$("#equipment-quantity").value=m.quantity||1;$("#equipment-weight").value=m.weight||0;$("#equipment-carried").checked=Boolean(m.carried);$("#equipment-ocv").value=m.ocv||0;$("#equipment-range").value=m.range||"";$("#equipment-pd").value=m.pd||0;$("#equipment-ed").value=m.ed||0;updateEquipmentBuilder();
+  }else updateEntryFacts(section,entry);
 }
 function fillModifierSelect(selector, catalog, sign) {
   const select = $(selector);
@@ -938,6 +1029,9 @@ $("#skill-key").innerHTML = Object.entries(SKILLS_4E)
   .map(([key, s]) => '<option value="' + key + '">' + s.label + "</option>")
   .join("");
 $("#entry-new-section").addEventListener("change", () => {
+  const section=$("#entry-new-section").value;
+  $("#entry-category-heading").textContent=sectionLabels()[section]||section;
+  if($("#entry-dialog").dataset.mode==="new")$("#entry-form-heading").textContent=`Add ${sectionLabels()[section]||"Character Ability"}`;
   updatePowerBuilder();
   updateSkillBuilder();
   updateSimpleAbilityBuilder();
@@ -1056,11 +1150,14 @@ $("#entry-form").addEventListener("submit", () => {
 $("#add-entry").addEventListener("click", () => {
   $("#entry-dialog").dataset.mode = "new";
   $("#entry-section-label").hidden = false;
+  $("#entry-category-heading").textContent = "Character creation";
+  $("#entry-form-heading").textContent = "Add Character Ability";
   $("#entry-organize").hidden = true;
   $("#entry-section").value = "";
   $("#entry-id").value = "";
   $("#entry-name").value = "";
   $("#entry-levels").value = 0;
+  $("#entry-levels").readOnly = true;
   $("#entry-notes").value = "";
   $("#power-advantage-key").value = "none";
   $("#power-limitation-key").value = "none";
@@ -1382,11 +1479,7 @@ document.querySelectorAll("[data-nav]").forEach((button) =>
 );
 document.querySelectorAll("[data-jump]").forEach((button) =>
   button.addEventListener("click", () => {
-    const target = document.querySelector(button.dataset.jump);
-    (target?.closest(".panel") || target)?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
+    showSheetPage(button.dataset.page);
   }),
 );
 window.addEventListener("beforeinstallprompt", (event) => {
@@ -1427,4 +1520,5 @@ $("#refresh-button").addEventListener("click", async (event) => {
   }
 });
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js");
+setupSheetPages();
 renderLibrary();

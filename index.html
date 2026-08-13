@@ -120,22 +120,22 @@
         </div>
         <div id="import-notice" class="notice" hidden></div>
         <nav class="sheet-jump" aria-label="Character sheet sections">
-          <button data-jump=".characteristics-panel">Stats</button
-          ><button data-jump="#abilities-panel">Abilities</button
+          <button data-jump=".characteristics-panel">Characteristics</button
+          ><button data-jump="#abilities-panel">Skills &amp; Powers</button
           ><button data-jump=".combat-panel">Combat</button
           ><button data-jump=".dice-controls">Dice</button
-          ><button data-jump="#profile-panel">Profile</button>
+          ><button data-jump="#profile-panel">Background</button>
         </nav>
         <section class="panel" id="profile-panel">
           <div class="panel-title">
-            <h3>Profile</h3>
+            <h3>Background</h3>
             <button id="profile-button" class="mini">Edit</button>
           </div>
           <div id="profile-summary" class="profile-summary"></div>
         </section>
         <section class="panel">
           <div class="panel-title">
-            <h3>Points</h3>
+            <h3>Character Points</h3>
             <span id="point-summary"></span>
           </div>
           <div id="point-grid" class="point-grid"></div>
@@ -165,7 +165,7 @@
         </section>
         <section class="panel" id="abilities-panel" hidden>
           <div class="panel-title">
-            <h3>Abilities</h3>
+            <h3>Skills, Perks, Talents &amp; Powers</h3>
             <div>
               <span id="ability-count"></span
               ><button id="add-entry" class="mini" hidden>Add</button>
@@ -276,7 +276,7 @@
     <dialog id="profile-dialog" class="entry-dialog">
       <form id="profile-form">
         <p class="eyebrow">Character details</p>
-        <h3>Edit profile and points</h3>
+        <h3>Edit Background and Character Points</h3>
         <label
           >Alternate identities<input id="profile-alternateIdentities" /></label
         ><label>Campaign<input id="profile-campaignName" /></label
@@ -301,12 +301,12 @@
         ><label>Notes<textarea id="profile-notes" rows="4"></textarea></label>
         <div class="point-edit">
           <label
-            >Base points<input
+            >Base Character Points<input
               id="points-base"
               type="number"
               inputmode="numeric" /></label
-          ><label
-            >Disadvantage allowance<input
+            ><label
+              >Maximum Disadvantage Points<input
               id="points-disadvantages"
               type="number"
               inputmode="numeric" /></label
@@ -358,14 +358,40 @@
         </div>
       </form>
     </dialog>
+    <dialog id="entry-detail-dialog" class="entry-dialog entry-detail-dialog">
+      <article>
+        <p id="detail-category" class="eyebrow"></p>
+        <h3 id="detail-name"></h3>
+        <div class="detail-facts">
+          <div><span>Character Points</span><strong id="detail-points">—</strong></div>
+          <div><span>Skill Roll</span><strong id="detail-roll">None</strong></div>
+        </div>
+        <section class="rules-definition">
+          <h4>Fourth Edition definition</h4>
+          <p id="detail-definition"></p>
+        </section>
+        <section id="detail-mechanics-wrap">
+          <h4>Character details</h4>
+          <p id="detail-mechanics"></p>
+        </section>
+        <section id="detail-notes-wrap">
+          <h4>Notes</h4>
+          <p id="detail-notes"></p>
+        </section>
+        <div class="dialog-actions">
+          <button id="close-entry-detail" type="button" class="quiet">Close</button>
+          <button id="edit-entry-detail" type="button" class="primary">Edit</button>
+        </div>
+      </article>
+    </dialog>
     <dialog id="entry-dialog" class="entry-dialog">
       <form id="entry-form">
         <input id="entry-section" type="hidden" /><input
           id="entry-id"
           type="hidden"
         />
-        <p class="eyebrow">Imported ability</p>
-        <h3>Edit HDC entry</h3>
+        <p id="entry-category-heading" class="eyebrow"></p>
+        <h3 id="entry-form-heading">Edit</h3>
         <label id="entry-section-label" hidden
           >Section<select id="entry-new-section">
             <option value="skills">Skills</option>
@@ -532,10 +558,13 @@
           >
           <div id="power-preview" class="power-preview"></div>
         </div>
-        <label>Custom name (optional)<input id="entry-name" placeholder="Uses the selected rule name when blank" /></label>
+        <label>Name<input id="entry-name" placeholder="Uses the selected rule name when blank" /></label>
         <label
-          >Levels<input id="entry-levels" type="number" inputmode="numeric"
+          >Character Points<input id="entry-levels" type="number" inputmode="numeric"
         /></label>
+        <div class="form-fact"><span>Calculated Character Point Cost</span><strong id="entry-cost-display">—</strong></div>
+        <div class="form-fact"><span>Skill Roll</span><strong id="entry-roll-display">None</strong></div>
+        <section class="rules-definition"><h4>Fourth Edition definition</h4><p id="entry-definition"></p></section>
         <label>Notes<textarea id="entry-notes" rows="5"></textarea></label>
         <div id="entry-organize" class="organize-actions">
           <button id="move-entry-up" type="button" class="quiet">Move up</button
