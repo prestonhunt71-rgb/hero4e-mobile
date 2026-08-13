@@ -8,6 +8,7 @@ export function importHdc(xmlText) {
   if (!root) throw new Error("No Hero Designer CHARACTER record was found.");
   const info = root.getElementsByTagName("CHARACTER_INFO")[0];
   const block = root.getElementsByTagName("CHARACTERISTICS")[0];
+  const basic = root.getElementsByTagName("BASIC_CONFIGURATION")[0];
   if (!block) throw new Error("The HDC file has no CHARACTERISTICS block.");
   const characteristics = {};
   for (const key of primaryKeys) characteristics[key] = primaryDefinitions[key][0] + Number(attribute(block.getElementsByTagName(key)[0], "LEVELS", 0));
@@ -15,7 +16,7 @@ export function importHdc(xmlText) {
   for (const key of figuredKeys) characteristics[key] = bases[key] + Number(attribute(block.getElementsByTagName(key)[0], "LEVELS", 0));
   const sectionNames=["SKILLS","PERKS","TALENTS","MARTIALARTS","POWERS","DISADVANTAGES","EQUIPMENT"];
   const sections=Object.fromEntries(sectionNames.map((sectionName)=>{ const section=root.getElementsByTagName(sectionName)[0]; const entries=section?Array.from(section.childNodes).filter((node)=>node.nodeType===1).map((node)=>({ id:attribute(node,"ID")||crypto.randomUUID(), tag:node.tagName, xmlId:attribute(node,"XMLID"), name:attribute(node,"NAME")||attribute(node,"INPUT")||attribute(node,"DISPLAY")||attribute(node,"ALIAS")||attribute(node,"XMLID")||node.tagName, alias:attribute(node,"ALIAS"), option:attribute(node,"OPTION_ALIAS")||attribute(node,"OPTION"), levels:Number(attribute(node,"LEVELS",0)), baseCost:Number(attribute(node,"BASECOST",0)), notes:node.getElementsByTagName("NOTES")[0]?.textContent?.trim()||"", rawXml:new XMLSerializer().serializeToString(node) })):[]; return [sectionName.toLowerCase(),entries]; }));
-  return normalizeCharacter({ name:attribute(info,"CHARACTER_NAME","Imported Hero"), playerName:attribute(info,"PLAYER_NAME"), characteristics, sections, source:{type:"hdc",formatVersion:attribute(root,"version"),template:attribute(root,"TEMPLATE"),importedAt:new Date().toISOString()}, preservedHdc:xmlText, hdcDirty:false, warnings:["Imported from Hero Designer. Unchanged exports preserve the original file exactly; edited exports retain the original HDC structure."] });
+  return normalizeCharacter({ name:attribute(info,"CHARACTER_NAME","Imported Hero"), playerName:attribute(info,"PLAYER_NAME"), profile:{alternateIdentities:attribute(info,"ALTERNATE_IDENTITIES"),campaignName:attribute(info,"CAMPAIGN_NAME"),background:info?.getElementsByTagName("BACKGROUND")[0]?.textContent||"",personality:info?.getElementsByTagName("PERSONALITY")[0]?.textContent||"",quote:info?.getElementsByTagName("QUOTE")[0]?.textContent||"",tactics:info?.getElementsByTagName("TACTICS")[0]?.textContent||"",appearance:info?.getElementsByTagName("APPEARANCE")[0]?.textContent||"",notes:info?.getElementsByTagName("NOTES1")[0]?.textContent||""}, points:{base:Number(attribute(basic,"BASE_POINTS",0)),disadvantages:Number(attribute(basic,"DISAD_POINTS",0)),experience:Number(attribute(basic,"EXPERIENCE",0))}, characteristics, sections, source:{type:"hdc",formatVersion:attribute(root,"version"),template:attribute(root,"TEMPLATE"),importedAt:new Date().toISOString()}, preservedHdc:xmlText, hdcDirty:false, warnings:["Imported from Hero Designer. Unchanged exports preserve the original file exactly; edited exports retain the original HDC structure."] });
 }
 
 
@@ -29,6 +30,9 @@ export function exportHdc(character) {
   const info = root?.getElementsByTagName("CHARACTER_INFO")[0];
   setAttribute(info, "CHARACTER_NAME", character.name);
   setAttribute(info, "PLAYER_NAME", character.playerName || "");
+  setAttribute(info,"ALTERNATE_IDENTITIES",character.profile?.alternateIdentities||""); setAttribute(info,"CAMPAIGN_NAME",character.profile?.campaignName||"");
+  const profileTags={background:"BACKGROUND",personality:"PERSONALITY",quote:"QUOTE",tactics:"TACTICS",appearance:"APPEARANCE",notes:"NOTES1"}; for(const [key,tag]of Object.entries(profileTags)){let node=info?.getElementsByTagName(tag)[0];if(!node&&info){node=xml.createElement(tag);info.appendChild(node);}if(node)node.textContent=character.profile?.[key]||"";}
+  const basic=root?.getElementsByTagName("BASIC_CONFIGURATION")[0];setAttribute(basic,"BASE_POINTS",Number(character.points?.base||0));setAttribute(basic,"DISAD_POINTS",Number(character.points?.disadvantages||0));setAttribute(basic,"EXPERIENCE",Number(character.points?.experience||0));
   const block = root?.getElementsByTagName("CHARACTERISTICS")[0];
   const bases = figured(character.characteristics);
   for (const key of primaryKeys) setAttribute(block?.getElementsByTagName(key)[0], "LEVELS", Number(character.characteristics[key]) - primaryDefinitions[key][0]);
