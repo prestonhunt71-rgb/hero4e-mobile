@@ -1,5 +1,5 @@
-﻿const CACHE = "hero4e-mobile-v20";
-const ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./src/app.js", "./src/rules.js", "./src/hdc.js", "./src/store.js","./src/interchange.js","./src/foundry.js","./src/combat.js","./src/images.js","./src/powers.js", "./src/styles.css", "./icons/hero4e.svg", "./icons/hero4e-180.png", "./icons/hero4e-512.png", "./samples/The%20Iron%20Wolf.hdc"];
+﻿const CACHE = "hero4e-mobile-v21";
+const ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./src/app.js", "./src/rules.js", "./src/hdc.js", "./src/store.js","./src/interchange.js","./src/foundry.js","./src/combat.js","./src/images.js","./src/powers.js","./src/skills.js", "./src/styles.css", "./icons/hero4e.svg", "./icons/hero4e-180.png", "./icons/hero4e-512.png", "./samples/The%20Iron%20Wolf.hdc"];
 self.addEventListener("install", (event) => event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS))));
 self.addEventListener("activate", (event) => event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))))));
 self.addEventListener("fetch", (event) => {
