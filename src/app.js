@@ -573,15 +573,12 @@ async function exportJson() {
   downloadFile(text, filename, "application/json");
   toast("HERO4E character downloaded");
 }
-function exportFoundry() {
-  const filename = `fvtt-Actor-${
-    current.name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "") || "hero"
-  }.json`;
-  downloadFile(exportFoundryActorJson(current), filename, "application/json");
-  toast("Foundry Actor downloaded");
+async function exportFoundry() {
+  const filename = `fvtt-Actor-${current.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "hero"}.json`;
+  const text=exportFoundryActorJson(current),file=new File([text],filename,{type:"application/json"});
+  try { if(navigator.canShare?.({files:[file]})){await navigator.share({title:`${current.name} Foundry Actor`,files:[file]});toast("Foundry Actor shared");return;} }
+  catch(error){if(error.name==="AbortError")return;console.warn(error);}
+  downloadFile(text,filename,"application/json");toast("Foundry Actor downloaded");
 }
 async function exportHdc() {
   let prototypeHdc = "";
