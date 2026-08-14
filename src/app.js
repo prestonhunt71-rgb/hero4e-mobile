@@ -715,6 +715,7 @@ $("#entry-form").addEventListener("submit", (event) => {
                   improvements: $("#skill-improvements").value,
                   familiarity: $("#skill-familiarity").checked,
                   characteristicBased: $("#skill-characteristic").checked,
+                  ...collectSkillOptions(),
                   notes: $("#entry-notes").value,
                 })
               : section === "martialarts"
@@ -765,7 +766,7 @@ $("#entry-form").addEventListener("submit", (event) => {
 });
 function updateExistingEntryFromForm(section, entry) {
   if (section === "skills" && SKILLS_4E[$("#skill-key").value]) {
-    entry.mechanics = calculateSkill4e($("#skill-key").value, current.characteristics, {improvements:Number($("#skill-improvements").value||0),familiarity:$("#skill-familiarity").checked,characteristicBased:$("#skill-characteristic").checked});
+    entry.mechanics = calculateSkill4e($("#skill-key").value, current.characteristics, {improvements:Number($("#skill-improvements").value||0),familiarity:$("#skill-familiarity").checked,characteristicBased:$("#skill-characteristic").checked,...collectSkillOptions()});
     entry.xmlId = $("#skill-key").value; entry.levels = entry.mechanics.improvements; entry.baseCost = entry.mechanics.cost;
   } else if (section === "martialarts" && MARTIAL_MANEUVERS_4E[$("#martial-key").value]) {
     const rebuilt=buildMartialManeuver4e({key:$("#martial-key").value,name:entry.name,category:$("#martial-category").value,useWeapon:$("#martial-use-weapon").checked,notes:entry.notes});
@@ -931,30 +932,31 @@ function updateSimpleAbilityBuilder() {
     $("#simple-ability-preview").textContent = error.message;
   }
 }
+function collectSkillOptions() {
+  const value = id => document.getElementById(id)?.value;
+  return {scope:value("skill-scope"),quantity:Number(value("skill-quantity")||1),fluency:Number(value("skill-fluency")||1),nativeTongue:Boolean(document.getElementById("skill-native")?.checked),literacy:Boolean(document.getElementById("skill-literacy")?.checked),similarity:Number(value("skill-similarity")||0)};
+}
+function renderSkillSpecialOptions(saved=null) {
+  const key=$("#skill-key").value,definition=SKILLS_4E[key],host=$("#skill-special-options");
+  host.hidden=!definition?.special;$("#skill-standard-options").hidden=Boolean(definition?.special);
+  if(!definition?.special){host.innerHTML="";return;}
+  if(definition.language){host.innerHTML=`<div class="power-numbers"><label>Fluency<select id="skill-fluency"><option value="1">Basic conversation (1)</option><option value="2">Fluent conversation (2)</option><option value="3">Completely fluent with accent (3)</option><option value="4">Idiomatic, native accent (4)</option><option value="5">Imitate dialects (5)</option></select></label><label>Language similarity<select id="skill-similarity"><option value="0">Standard cost</option><option value="-1">Related language (−1)</option><option value="1">Unrelated language (+1)</option></select></label><label class="check"><input id="skill-literacy" type="checkbox"> Literacy (+1 when not standard)</label><label class="check"><input id="skill-native" type="checkbox"> Native language (free)</label></div>`;}else{host.innerHTML=`<div class="power-numbers"><label>Application<select id="skill-scope">${Object.entries(definition.scopes).map(([id,item])=>`<option value="${id}">${item.label} (${item.cost})</option>`).join("")}</select></label><label>Levels / selections<input id="skill-quantity" type="number" min="1" step="1" value="1"></label></div>`;}
+  if(saved){for(const [id,value] of Object.entries({"skill-scope":saved.scope,"skill-quantity":saved.improvements,"skill-fluency":saved.fluency,"skill-similarity":saved.similarity})){const node=document.getElementById(id);if(node&&value!==undefined)node.value=value;}const native=document.getElementById("skill-native"),literacy=document.getElementById("skill-literacy");if(native)native.checked=Boolean(saved.nativeTongue);if(literacy)literacy.checked=Boolean(saved.literacy);}
+  host.querySelectorAll("input,select").forEach(node=>node.addEventListener("input",updateSkillBuilder));
+}
 function updateSkillBuilder() {
   const visible = $("#entry-new-section").value === "skills";
   $("#skill-builder").hidden = !visible;
   if (!visible) return;
-  const definition = SKILLS_4E[$("#skill-key").value],
-    background = Boolean(definition?.background);
+  const definition = SKILLS_4E[$("#skill-key").value],background=Boolean(definition?.background);
   $("#skill-characteristic-wrap").hidden = !background;
+  if($("#skill-special-options").dataset.key!==$("#skill-key").value){$("#skill-special-options").dataset.key=$("#skill-key").value;renderSkillSpecialOptions();}
   try {
-    const s = calculateSkill4e($("#skill-key").value, current.characteristics, {
-      improvements: Number($("#skill-improvements").value || 0),
-      familiarity: $("#skill-familiarity").checked,
-      characteristicBased: $("#skill-characteristic").checked,
-    });
-    $("#skill-preview").textContent = [
-      s.characteristic || "General",
-      s.roll + "-",
-      s.cost + " points",
-    ].join(" · ");
-    updateEntryFacts("skills", {mechanics:s, xmlId:$("#skill-key").value});
-  } catch (error) {
-    $("#skill-preview").textContent = error.message;
-  }
-}
-let additionalPowerModifiers = [];
+    const s=calculateSkill4e($("#skill-key").value,current.characteristics,{improvements:Number($("#skill-improvements").value||0),familiarity:$("#skill-familiarity").checked,characteristicBased:$("#skill-characteristic").checked,...collectSkillOptions()});
+    $("#skill-preview").textContent=[s.detail||s.characteristic||"General",Number.isFinite(s.roll)?s.roll+"-":"No roll",s.cost+" points"].join(" · ");
+    updateEntryFacts("skills",{mechanics:s,xmlId:$("#skill-key").value});
+  } catch(error){$("#skill-preview").textContent=error.message;}
+}let additionalPowerModifiers = [];
 function allPowerModifiers() { return [...additionalPowerModifiers, selectedModifier("advantage"), selectedModifier("limitation")].filter(Boolean); }
 function renderPowerModifierList() {
   const host=$("#power-modifier-list");
@@ -1029,7 +1031,7 @@ function prepareExistingEntryBuilder(section, entry) {
   if(section==="powers"&&m.isFramework){
     $("#special-kind").innerHTML='<option value="multipower">Multipower</option><option value="elementalControl">Elemental Control</option><option value="vpp">Variable Power Pool</option>';$("#special-kind").value=m.kind;$("#framework-points").value=m.points||entry.levels||20;$("#framework-advantages").value=m.advantages||0;$("#framework-limitations").value=m.limitations||0;updateSpecialBuilder();
   }else if(section==="skills"&&SKILLS_4E[m.key]){
-    $("#skill-key").value=m.key;$("#skill-improvements").value=m.improvements??entry.levels??0;$("#skill-familiarity").checked=Boolean(m.familiarity);$("#skill-characteristic").checked=Boolean(m.characteristicBased);updateSkillBuilder();
+    $("#skill-key").value=m.key;$("#skill-improvements").value=m.improvements??entry.levels??0;$("#skill-familiarity").checked=Boolean(m.familiarity);$("#skill-characteristic").checked=Boolean(m.characteristicBased);$("#skill-special-options").dataset.key=m.key;renderSkillSpecialOptions(m);updateSkillBuilder();
   }else if(section==="martialarts"&&MARTIAL_MANEUVERS_4E[m.key]){
     $("#martial-key").value=m.key;$("#martial-category").value=m.category||"Hand-To-Hand";$("#martial-use-weapon").checked=Boolean(m.useWeapon);updateMartialBuilder();
   }else if(section==="powers"&&!m.isFramework&&POWER_CATALOG_4E[m.key]){
@@ -1038,7 +1040,7 @@ function prepareExistingEntryBuilder(section, entry) {
   }else if((section==="talents"||section==="perks")&&!m.isSkillEnhancer&&((section==="talents"?TALENTS_4E:PERKS_4E)[m.key])){
     updateSimpleAbilityBuilder();$("#simple-ability-key").value=m.key;$("#simple-ability-levels").value=m.levels??entry.levels??0;updateSimpleAbilityBuilder();
   }else if(section==="disadvantages"&&DISADVANTAGES_4E[m.key]){
-    $("#disadvantage-key").value=m.key;$("#disadvantage-levels").value=m.levels||entry.levels||1;updateDisadvantageBuilder(true);[...document.querySelectorAll("[data-disadvantage-option]")].forEach((node,index)=>{if(m.selections?.[index])node.value=m.selections[index]});updateDisadvantageBuilder();
+    $("#disadvantage-key").value=m.key;$("#disadvantage-levels").value=m.levels||entry.levels||1;updateDisadvantageBuilder(true);const selections=normalizeDisadvantageSelections4e(m.key,m.selections);[...document.querySelectorAll("[data-disadvantage-option]")].forEach((node,index)=>{if(selections[index])node.value=selections[index]});updateDisadvantageBuilder();
   }else if(section==="equipment"&&m.kind){
     $("#equipment-kind").value=m.kind;$("#equipment-effect").value=m.effect||"";$("#equipment-quantity").value=m.quantity||1;$("#equipment-weight").value=m.weight||0;$("#equipment-carried").checked=Boolean(m.carried);$("#equipment-ocv").value=m.ocv||0;$("#equipment-range").value=m.range||"";$("#equipment-pd").value=m.pd||0;$("#equipment-ed").value=m.ed||0;updateEquipmentBuilder();
   }else updateEntryFacts(section,entry);
