@@ -12,6 +12,7 @@
   --muted: #aebdca;
   --comic: "Marker Felt", "Comic Sans MS", "Arial Rounded MT Bold", sans-serif;
   --display: Impact, "Arial Black", sans-serif;
+  --bottom-nav-clearance: 118px;
   font-family: var(--comic);
   background: var(--ink);
   color: var(--text);
@@ -21,6 +22,10 @@
 }
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: calc(78px + env(safe-area-inset-top));
+  scroll-padding-bottom: calc(
+    var(--bottom-nav-clearance) + env(safe-area-inset-bottom)
+  );
   overflow-x: hidden;
 }
 body {
@@ -33,7 +38,9 @@ body {
   background-size:
     10px 10px,
     auto;
-  padding-bottom: calc(94px + env(safe-area-inset-bottom));
+  padding-bottom: calc(
+    var(--bottom-nav-clearance) + env(safe-area-inset-bottom)
+  );
 }
 button,
 .button,
@@ -97,7 +104,8 @@ button,
 main {
   width: min(780px, 100%);
   margin: auto;
-  padding: 12px;
+  padding: 12px 12px
+    calc(var(--bottom-nav-clearance) + env(safe-area-inset-bottom));
 }
 .view {
   display: none;
@@ -374,7 +382,7 @@ button:active {
   gap: 7px;
   overflow-x: auto;
   position: sticky;
-  top: 0;
+  top: env(safe-area-inset-top);
   z-index: 4;
   margin: 10px -12px;
   padding: 9px 12px;
@@ -926,7 +934,8 @@ button:active {
 }
 @media (max-width: 620px) {
   main {
-    padding: 9px;
+    padding: 9px 9px
+      calc(var(--bottom-nav-clearance) + env(safe-area-inset-bottom));
   }
   .sheet-jump {
     margin-inline: -9px;
