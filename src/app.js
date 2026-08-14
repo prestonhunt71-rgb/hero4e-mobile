@@ -184,6 +184,8 @@ function sectionLabels() {
   };
 }
 function syncFrameworkCosts(character = current) {
+  const builderPoints=Number(character?.points?.base||0)+Number(character?.points?.disadvantages||0)+Number(character?.points?.experience||0);
+  for(const entry of character?.sections?.perks||[]){const key=entry.mechanics?.key;if(key==="follower"||key==="vehicleOrBase"){entry.mechanics=calculatePerk4e(key,entry.levels,{...(entry.mechanics.options||{}),builderPoints});entry.baseCost=entry.mechanics.cost;}}
   const powers = character?.sections?.powers || [];
   for (const framework of powers.filter((entry) => entry.mechanics?.isFramework)) {
     const result = frameworkCost4e(framework, powers);
@@ -296,11 +298,13 @@ function renderProfile() {
       ...(current.sections?.talents || []),
       ...(current.sections?.perks || []),
     ].reduce((sum, entry) => sum + (Number(entry.mechanics?.cost) || 0), 0),
+    knownMartial = (current.sections?.martialarts || []).reduce((sum, entry) => sum + (Number(entry.mechanics?.characterPoints ?? entry.baseCost) || 0), 0),
     knownSpent =
       totalCharacteristicCost(current.characteristics) +
       knownPowers +
       knownSkills +
-      knownAbilities,
+      knownAbilities +
+      knownMartial,
     balance = available - knownSpent;
   $("#point-grid").innerHTML = [
     ["Base Character Points", points.base],
@@ -377,12 +381,12 @@ function renderCombat() {
         `<button data-segment="${value}" class="${value === segment ? "current " : ""}${phases.includes(value) ? "phase" : ""}" aria-label="Segment ${value}${phases.includes(value) ? ", Phase" : ""}"><span>${value}</span>${phases.includes(value) ? "<small>Phase</small>" : ""}</button>`,
     )
     .join("");
-  const labels = phase.log.map((id) => ACTION_TIMING_4E[id]?.label || id);
-  $("#phase-status").textContent = phase.held
+  const labels = phase.log.map((id) => ACTION_TIMING_4E[id]?.label || id),lastAction=ACTION_TIMING_4E[phase.log.at(-1)],maneuverDetails=lastAction?.effect?[`OCV ${lastAction.ocv}`,`DCV ${lastAction.dcv}`,lastAction.effect].join(" · "):"";
+  $("#phase-status").textContent = (phase.held
     ? "Held Action saved"
     : phase.ended
       ? `Phase complete${labels.length ? ` · ${labels.join(" + ")}` : ""}`
-      : `${1 - Number(phase.used || 0)} Phase remaining${labels.length ? ` · ${labels.join(" + ")}` : ""}`;
+      : `${1 - Number(phase.used || 0)} Phase remaining${labels.length ? ` · ${labels.join(" + ")}` : ""}`)+(maneuverDetails?` · ${maneuverDetails}`:"");
   $("#phase-meter-fill").style.width =
     `${Math.min(100, Number(phase.used || 0) * 100)}%`;
   $("#damage-defense-kind").addEventListener("change", renderDamageDefenses);
@@ -705,6 +709,7 @@ $("#entry-form").addEventListener("submit", (event) => {
                 name: $("#entry-name").value,
                 characteristics: current.characteristics,
                 levels: $("#simple-ability-levels").value,
+                options: collectTalentOptions(),
                 notes: $("#entry-notes").value,
               })
             : section === "skills"
@@ -780,7 +785,7 @@ function updateExistingEntryFromForm(section, entry) {
     entry.mechanics={...calculatePowerCost4e(entry.xmlId,entry.levels,{advantages:advantageTotal,limitations:limitationTotal,options:collectPowerOptions()}),effect:entry.levels+" "+POWER_CATALOG_4E[entry.xmlId].unit,modifiers:powerModifiers,status:"converted",pricingBasis:"Fourth Edition",...Object.fromEntries(Object.entries(preserved).filter(([,value])=>value))};
     entry.baseCost=entry.mechanics.baseCost;
   } else if ((section === "talents" || section === "perks") && !entry.mechanics?.isSkillEnhancer) {
-    const key=$("#simple-ability-key").value,levels=Number($("#simple-ability-levels").value||0),mechanics=section==="talents"?calculateTalent4e(key,current.characteristics,levels):calculatePerk4e(key,levels);
+    const key=$("#simple-ability-key").value,levels=Number($("#simple-ability-levels").value||0),mechanics=section==="talents"?calculateTalent4e(key,current.characteristics,levels,collectTalentOptions()):calculatePerk4e(key,levels,collectTalentOptions());
     entry.xmlId=key;entry.levels=levels;entry.mechanics=mechanics;entry.baseCost=mechanics.cost;
   } else if (section === "disadvantages" && DISADVANTAGES_4E[$("#disadvantage-key").value]) {
     const key=$("#disadvantage-key").value,selections=[...document.querySelectorAll("[data-disadvantage-option]")].map(node=>node.value),mechanics=calculateDisadvantage4e(key,{levels:Number($("#disadvantage-levels").value||1),selections});
@@ -898,41 +903,17 @@ function updateDisadvantageBuilder(rebuild = false) {
     .join(" · ");
   updateEntryFacts("disadvantages", {mechanics:d, xmlId:key});
 }
+function collectTalentOptions(){return {...Object.fromEntries([...document.querySelectorAll("[data-talent-option]")].map(node=>[node.dataset.talentOption,node.value])),builderPoints:Number(current?.points?.base||0)+Number(current?.points?.disadvantages||0)+Number(current?.points?.experience||0)};}
+function renderTalentOptions(saved=null){const key=$("#simple-ability-key").value,host=$("#simple-ability-options");const templates={dangerSense:`<div class="power-numbers"><label>Warning<select data-talent-option="warning"><option value="combat">Prevents surprise in combat</option><option value="outOfCombat">Out of combat, perceivable attacks (+5)</option><option value="anyAttack">Any attack (+10)</option></select></label><label>Sensing area<select data-talent-option="area"><option value="self">Self</option><option value="vicinity">Immediate vicinity (+5)</option><option value="general">General area (+10)</option><option value="any">Any area (+15)</option></select></label></div>`,findWeakness:`<label>Attack scope<select data-talent-option="scope"><option value="single">One attack</option><option value="group">Group of related attacks (+10)</option><option value="all">All attacks (+20)</option></select></label>`,contact8:`<label>Exceptional usefulness<select data-talent-option="usefulness"><option value="0">Ordinary Contact</option><option value="1">Useful (+1)</option><option value="2">Very useful (+2)</option><option value="3">Exceptionally useful (+3)</option></select></label>`,contact11:`<label>Exceptional usefulness<select data-talent-option="usefulness"><option value="0">Ordinary Contact</option><option value="1">Useful (+1)</option><option value="2">Very useful (+2)</option><option value="3">Exceptionally useful (+3)</option></select></label>`,follower:`<div class="power-numbers"><label>Total Points after Disadvantages<input type="number" min="0" step="1" data-talent-option="totalPoints"></label><label>Follower quantity<select data-talent-option="quantityDoublings"><option value="0">One Follower</option><option value="1">Two Followers (+5)</option><option value="2">Four Followers (+10)</option><option value="3">Eight Followers (+15)</option></select></label></div>`,vehicleOrBase:`<label>Total Points after Disadvantages<input type="number" min="0" step="1" data-talent-option="totalPoints"></label>`};host.innerHTML=templates[key]||"";host.hidden=!host.innerHTML;for(const node of host.querySelectorAll("[data-talent-option]")){if(saved?.options?.[node.dataset.talentOption]!==undefined)node.value=saved.options[node.dataset.talentOption];node.addEventListener("input",updateSimpleAbilityBuilder);}}
 function updateSimpleAbilityBuilder() {
-  const section = $("#entry-new-section").value,
-    visible = section === "talents" || section === "perks";
-  $("#simple-ability-builder").hidden = !visible;
-  if (!visible) return;
-  const catalog = section === "talents" ? TALENTS_4E : PERKS_4E,
-    select = $("#simple-ability-key"),
-    prior = select.value;
-  select.innerHTML = Object.entries(catalog)
-    .map(([key, a]) => '<option value="' + key + '">' + a.label + "</option>")
-    .join("");
-  if (catalog[prior]) select.value = prior;
-  $("#simple-ability-kind").textContent =
-    section === "talents" ? "Talent" : "Perk";
-  try {
-    const a =
-      section === "talents"
-        ? calculateTalent4e(
-            select.value,
-            current.characteristics,
-            Number($("#simple-ability-levels").value || 0),
-          )
-        : calculatePerk4e(
-            select.value,
-            Number($("#simple-ability-levels").value || 0),
-          );
-    $("#simple-ability-preview").textContent = [a.detail, a.cost + " points"]
-      .filter(Boolean)
-      .join(" · ");
-    updateEntryFacts(section, {mechanics:a, xmlId:select.value});
-  } catch (error) {
-    $("#simple-ability-preview").textContent = error.message;
-  }
-}
-function collectSkillOptions() {
+  const section=$("#entry-new-section").value,visible=section==="talents"||section==="perks";
+  $("#simple-ability-builder").hidden=!visible;if(!visible)return;
+  const catalog=section==="talents"?TALENTS_4E:PERKS_4E,select=$("#simple-ability-key"),prior=select.value;
+  select.innerHTML=Object.entries(catalog).map(([key,a])=>'<option value="'+key+'">'+a.label+"</option>").join("");if(catalog[prior])select.value=prior;
+  $("#simple-ability-kind").textContent=section==="talents"?"Talent":"Perk";$("#simple-ability-levels-label").textContent=({follower:"Base Points",vehicleOrBase:"Base Points",fringeBenefit:"Character Points",contact8:"Roll improvements (+1)",contact11:"Roll improvements (+1)"}[select.value]||"Levels / improvements");
+  if($("#simple-ability-options").dataset.key!==select.value){$("#simple-ability-options").dataset.key=select.value;renderTalentOptions();}
+  try{const a=section==="talents"?calculateTalent4e(select.value,current.characteristics,Number($("#simple-ability-levels").value||0),collectTalentOptions()):calculatePerk4e(select.value,Number($("#simple-ability-levels").value||0),collectTalentOptions());$("#simple-ability-preview").textContent=[a.detail,a.cost+" points"].filter(Boolean).join(" · ");updateEntryFacts(section,{mechanics:a,xmlId:select.value});}catch(error){$("#simple-ability-preview").textContent=error.message;}
+}function collectSkillOptions() {
   const value = id => document.getElementById(id)?.value;
   return {scope:value("skill-scope"),quantity:Number(value("skill-quantity")||1),fluency:Number(value("skill-fluency")||1),nativeTongue:Boolean(document.getElementById("skill-native")?.checked),literacy:Boolean(document.getElementById("skill-literacy")?.checked),similarity:Number(value("skill-similarity")||0)};
 }
@@ -1038,7 +1019,7 @@ function prepareExistingEntryBuilder(section, entry) {
     $("#power-key").value=m.key;$("#power-levels").value=entry.levels??m.levels??POWER_CATALOG_4E[m.key].defaultLevels??1;renderPowerOptions(m.options||{});
     additionalPowerModifiers=[...(m.modifiers||[])];$("#power-advantage-key").value="none";$("#power-limitation-key").value="none";$("#power-advantages").value=0;$("#power-limitations").value=0;renderPowerModifierList();refreshFrameworkChoices();if(m.frameworkId)$("#power-framework").value=m.frameworkId;if(m.slotKind)$("#power-slot-kind").value=m.slotKind;updatePowerBuilder();
   }else if((section==="talents"||section==="perks")&&!m.isSkillEnhancer&&((section==="talents"?TALENTS_4E:PERKS_4E)[m.key])){
-    updateSimpleAbilityBuilder();$("#simple-ability-key").value=m.key;$("#simple-ability-levels").value=m.levels??entry.levels??0;updateSimpleAbilityBuilder();
+    updateSimpleAbilityBuilder();$("#simple-ability-key").value=m.key;$("#simple-ability-levels").value=m.levels??entry.levels??0;$("#simple-ability-options").dataset.key=m.key;renderTalentOptions(m);updateSimpleAbilityBuilder();
   }else if(section==="disadvantages"&&DISADVANTAGES_4E[m.key]){
     $("#disadvantage-key").value=m.key;$("#disadvantage-levels").value=m.levels||entry.levels||1;updateDisadvantageBuilder(true);const selections=normalizeDisadvantageSelections4e(m.key,m.selections);[...document.querySelectorAll("[data-disadvantage-option]")].forEach((node,index)=>{if(selections[index])node.value=selections[index]});updateDisadvantageBuilder();
   }else if(section==="equipment"&&m.kind){
@@ -1505,7 +1486,8 @@ function moveCombat(delta) {
   saveCharacter(current);
   renderCombat();
 }
-document.querySelectorAll("[data-action]").forEach((button) =>
+document.querySelectorAll("[data-action]").forEach((button) => {
+  const action=ACTION_TIMING_4E[button.dataset.action];if(action?.effect)button.title=[`OCV ${action.ocv}`,`DCV ${action.dcv}`,action.effect,"BBB p. 153"].join(" · ");
   button.addEventListener("click", () => {
     const result = addPhaseAction(current.combat.phase, button.dataset.action);
     if (!result.legal) {
@@ -1515,8 +1497,8 @@ document.querySelectorAll("[data-action]").forEach((button) =>
     current.combat.phase = result;
     saveCharacter(current);
     renderCombat();
-  }),
-);
+  });
+});
 $("#clear-phase").addEventListener("click", () => {
   current.combat.phase = clearPhaseActions();
   saveCharacter(current);

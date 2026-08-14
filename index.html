@@ -140,8 +140,7 @@
           </div>
           <div id="point-grid" class="point-grid"></div>
           <small class="provisional"
-            >Configured Hero Designer totals; complete ability-cost accounting
-            remains provisional.</small
+            >Supported Fourth Edition entries recalculate automatically; campaign-priced Equipment remains separate.</small
           >
         </section>
         <div class="resource-row" id="resources"></div>
@@ -183,13 +182,7 @@
             <div class="phase-meter"><span id="phase-meter-fill"></span></div>
             <div id="phase-status"></div>
             <div class="action-buttons">
-              <button data-action="halfMove">Half Move</button
-              ><button data-action="attack">Attack</button
-              ><button data-action="fullMove">Full Move</button
-              ><button data-action="drawWeapon">Draw</button
-              ><button data-action="brace">Brace</button
-              ><button data-action="set">Set</button
-              ><button data-action="hold">Hold</button
+              <button data-action="halfMove">Half Move</button><button data-action="fullMove">Full Move</button><button data-action="drawWeapon">Draw</button><button data-action="block">Block</button><button data-action="brace">Brace</button><button data-action="disarm">Disarm</button><button data-action="dodge">Dodge</button><button data-action="grab">Grab</button><button data-action="haymaker">Haymaker</button><button data-action="moveBy">Move By</button><button data-action="moveThrough">Move Through</button><button data-action="set">Set</button><button data-action="strike">Strike</button><button data-action="attack">Other Attack</button><button data-action="covered">Covered</button><button data-action="diveForCover">Dive for Cover</button><button data-action="pullingAPunch">Pulling a Punch</button><button data-action="rollingWithPunch">Rolling with a Punch</button><button data-action="snapShot">Snap Shot</button><button data-action="suppression">Suppression</button><button data-action="sweep">Sweep</button><button data-action="hold">Hold</button
               ><button id="clear-phase" class="quiet">Clear Phase</button>
             </div>
           </div>
@@ -488,8 +481,7 @@
           <label
             >Fourth Edition <span id="simple-ability-kind">Talent</span
             ><select id="simple-ability-key"></select></label
-          ><label
-            >Levels / improvements<input
+          ><div id="simple-ability-options" hidden></div><label id="simple-ability-levels-wrap"><span id="simple-ability-levels-label">Levels / improvements</span><input
               id="simple-ability-levels"
               type="number"
               min="0"
