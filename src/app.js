@@ -1,4 +1,4 @@
-ï»¿import {
+import {
   characteristicCost,
   totalCharacteristicCost,
   combatValue,
@@ -58,7 +58,12 @@ import {
   skillSummary,
 } from "./skills.js";
 import { preparePortrait } from "./images.js";
-import { martialManeuverEffect4e, martialManeuverSummary4e } from "./martialarts.js";
+import {
+  MARTIAL_MANEUVERS_4E,
+  buildMartialManeuver4e,
+  martialManeuverEffect4e,
+  martialManeuverSummary4e,
+} from "./martialarts.js";
 import { entryDefinition4e, entryReference4e, entryRoll4e } from "./descriptions.js";
 import {
   SKILL_ENHANCERS_4E,
@@ -142,7 +147,7 @@ function renderLibrary() {
     ? all
         .map(
           (c, index) =>
-            `<button class="character-card" data-id="${c.id}"><span class="avatar">${c.portrait?.dataUrl ? `<img src="${c.portrait.dataUrl}" alt="" />` : escapeHtml(c.name.slice(0, 1).toUpperCase())}</span><span><strong>${c.name}</strong><small>${c.source?.type === "hdc" ? "Hero Designer import" : "HERO4E original"} Â· SPD ${c.characteristics.SPD}${c.profile?.alternateIdentities ? ` Â· ${escapeHtml(c.profile.alternateIdentities)}` : ""}</small></span><span class="chevron">${String(index + 1).padStart(2, "0")} â€º</span></button>`,
+            `<button class="character-card" data-id="${c.id}"><span class="avatar">${c.portrait?.dataUrl ? `<img src="${c.portrait.dataUrl}" alt="" />` : escapeHtml(c.name.slice(0, 1).toUpperCase())}</span><span><strong>${c.name}</strong><small>${c.source?.type === "hdc" ? "Hero Designer import" : "HERO4E original"} · SPD ${c.characteristics.SPD}${c.profile?.alternateIdentities ? ` · ${escapeHtml(c.profile.alternateIdentities)}` : ""}</small></span><span class="chevron">${String(index + 1).padStart(2, "0")} ›</span></button>`,
         )
         .join("")
     : `<div class="empty"><strong>${stored.length ? "No matching heroes" : "No characters yet"}</strong><p>${stored.length ? "Try a different name or identity." : "Your roster is stored locally on this device."}</p></div>`;
@@ -188,7 +193,7 @@ function syncFrameworkCosts(character = current) {
 }
 function entryMechanicsSummary(section, entry) {
   if (entry.mechanics?.isFramework) return frameworkSummary4e(entry, current.sections?.powers || []);
-  if (entry.mechanics?.isSkillEnhancer) return `Skill Enhancer Â· ${entry.mechanics.cost} points Â· âˆ’1 to affected skill costs`;
+  if (entry.mechanics?.isSkillEnhancer) return `Skill Enhancer · ${entry.mechanics.cost} points · -1 to affected skill costs`;
   if (section === "powers") return powerSummary(entry);
   if (section === "skills") return skillSummary(entry);
   if (section === "talents" || section === "perks") return abilitySummary(entry);
@@ -225,7 +230,7 @@ function renderEntries() {
   $("#ability-sections").innerHTML = groups
     .map(
       ([key, entries]) =>
-        `<details ${key === "skills" || key === "powers" ? "open" : ""}><summary>${labels[key] || key} <span>${entries.length}</span></summary><div class="entry-list">${entries.map((entry) => `<button class="entry" data-entry-section="${key}" data-entry-id="${escapeHtml(entry.id)}"><strong>${escapeHtml(entry.name || entry.alias || "Unnamed " + (labels[key] || "item"))}</strong><small>${escapeHtml([entry.alias !== entry.name ? entry.alias : "", entry.option, entry.mechanics ? entryMechanicsSummary(key, entry) : ""].filter(Boolean).join(" Â· "))}</small></button>`).join("")}</div></details>`,
+        `<details ${key === "skills" || key === "powers" ? "open" : ""}><summary>${labels[key] || key} <span>${entries.length}</span></summary><div class="entry-list">${entries.map((entry) => `<button class="entry" data-entry-section="${key}" data-entry-id="${escapeHtml(entry.id)}"><strong>${escapeHtml(entry.name || entry.alias || "Unnamed " + (labels[key] || "item"))}</strong><small>${escapeHtml([entry.alias !== entry.name ? entry.alias : "", entry.option, entry.mechanics ? entryMechanicsSummary(key, entry) : ""].filter(Boolean).join(" · "))}</small></button>`).join("")}</div></details>`,
     )
     .join("");
   document
@@ -351,7 +356,7 @@ function renderDamageDefenses() {
       status.dead ? "DEAD" : "",
     ]
       .filter(Boolean)
-      .join(" Â· ") || "Ready";
+      .join(" · ") || "Ready";
 }
 function renderCombat() {
   const { segment, turn } = current.combat,
@@ -361,7 +366,7 @@ function renderCombat() {
   current.combat.phase = phase;
   renderDamageDefenses();
   $("#combat-status").textContent =
-    `Turn ${turn} Â· Segment ${segment} Â· ${hasPhase(spd, segment) ? "Your Phase" : "No Phase"}`;
+    `Turn ${turn} · Segment ${segment} · ${hasPhase(spd, segment) ? "Your Phase" : "No Phase"}`;
   $("#speed-chart").innerHTML = Array.from({ length: 12 }, (_, i) => i + 1)
     .map(
       (value) =>
@@ -372,8 +377,8 @@ function renderCombat() {
   $("#phase-status").textContent = phase.held
     ? "Held Action saved"
     : phase.ended
-      ? `Phase complete${labels.length ? ` Â· ${labels.join(" + ")}` : ""}`
-      : `${1 - Number(phase.used || 0)} Phase remaining${labels.length ? ` Â· ${labels.join(" + ")}` : ""}`;
+      ? `Phase complete${labels.length ? ` · ${labels.join(" + ")}` : ""}`
+      : `${1 - Number(phase.used || 0)} Phase remaining${labels.length ? ` · ${labels.join(" + ")}` : ""}`;
   $("#phase-meter-fill").style.width =
     `${Math.min(100, Number(phase.used || 0) * 100)}%`;
   $("#damage-defense-kind").addEventListener("change", renderDamageDefenses);
@@ -622,7 +627,7 @@ function renderMartialSpecifications(section,entry){
   const box=$("#detail-martial-specs"),m=entry.mechanics;
   box.hidden=section!=="martialarts"||!m;
   if(box.hidden){box.innerHTML="";return;}
-  const facts=[["Action",m.action],["OCV",m.ocv],["DCV",m.dcv],["Damage Class Bonus",m.damageClasses||"â€”"],["Damage / Effect",martialManeuverEffect4e(entry,current.characteristics.STR)],["Add STR",m.addStrength?"Yes":"No"],["Use Weapon",m.useWeapon?"Yes":"No"],["Category",m.category]];
+  const facts=[["Action",m.action],["OCV",m.ocv],["DCV",m.dcv],["Damage Class Bonus",m.damageClasses||"—"],["Damage / Effect",martialManeuverEffect4e(entry,current.characteristics.STR)],["Add STR",m.addStrength?"Yes":"No"],["Use Weapon",m.useWeapon?"Yes":"No"],["Category",m.category]];
   if(m.weaponEffect)facts.push(["Weapon Effect",m.weaponEffect]);
   box.innerHTML=facts.map(([label,value])=>`<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("");
 }
@@ -707,8 +712,16 @@ $("#entry-form").addEventListener("submit", (event) => {
                   characteristicBased: $("#skill-characteristic").checked,
                   notes: $("#entry-notes").value,
                 })
-              : section === "powers"
-                ? buildPower4e({
+              : section === "martialarts"
+                ? buildMartialManeuver4e({
+                    key: $("#martial-key").value,
+                    name: $("#entry-name").value,
+                    category: $("#martial-category").value,
+                    useWeapon: $("#martial-use-weapon").checked,
+                    notes: $("#entry-notes").value,
+                  })
+                : section === "powers"
+                  ? buildPower4e({
                     key: $("#power-key").value,
                     name: $("#entry-name").value,
                     levels: $("#power-levels").value,
@@ -741,12 +754,15 @@ $("#entry-form").addEventListener("submit", (event) => {
   $("#entry-dialog").close();
   renderEntries();
   renderProfile();
-  toast(`${sectionLabels()[section] || "Character ability"} updated â€” save the character`);
+  toast(`${sectionLabels()[section] || "Character ability"} updated — save the character`);
 });
 function updateExistingEntryFromForm(section, entry) {
   if (section === "skills" && SKILLS_4E[$("#skill-key").value]) {
     entry.mechanics = calculateSkill4e($("#skill-key").value, current.characteristics, {improvements:Number($("#skill-improvements").value||0),familiarity:$("#skill-familiarity").checked,characteristicBased:$("#skill-characteristic").checked});
     entry.xmlId = $("#skill-key").value; entry.levels = entry.mechanics.improvements; entry.baseCost = entry.mechanics.cost;
+  } else if (section === "martialarts" && MARTIAL_MANEUVERS_4E[$("#martial-key").value]) {
+    const rebuilt=buildMartialManeuver4e({key:$("#martial-key").value,name:entry.name,category:$("#martial-category").value,useWeapon:$("#martial-use-weapon").checked,notes:entry.notes});
+    entry.xmlId=rebuilt.xmlId;entry.alias=rebuilt.alias;entry.levels=0;entry.mechanics=rebuilt.mechanics;entry.baseCost=rebuilt.baseCost;
   } else if (section === "powers" && !entry.mechanics?.isFramework && POWER_CATALOG_4E[$("#power-key").value]) {
     const advantage=selectedModifier("advantage"), limitation=selectedModifier("limitation"), frameworkId=$("#power-framework").value||undefined,framework=(current.sections?.powers||[]).find(item=>item.id===frameworkId),preserved={frameworkId,frameworkName:framework?.name,slotKind:framework?.mechanics?.kind==="multipower"?$("#power-slot-kind").value:frameworkId?"framework":undefined};
     entry.levels=Number($("#power-levels").value||1); entry.xmlId=$("#power-key").value;
@@ -798,7 +814,7 @@ $("#delete-entry").addEventListener("click", () => {
   $("#entry-dialog").close();
   renderEntries();
   renderProfile();
-  toast("Ability removed â€” export creates updated HDC");
+  toast("Ability removed — export creates updated HDC");
 });
 function updateEquipmentBuilder() {
   const visible = $("#entry-new-section").value === "equipment";
@@ -868,7 +884,7 @@ function updateDisadvantageBuilder(rebuild = false) {
     });
   $("#disadvantage-preview").textContent = [d.detail, d.cost + " points"]
     .filter(Boolean)
-    .join(" Â· ");
+    .join(" · ");
   updateEntryFacts("disadvantages", {mechanics:d, xmlId:key});
 }
 function updateSimpleAbilityBuilder() {
@@ -899,7 +915,7 @@ function updateSimpleAbilityBuilder() {
           );
     $("#simple-ability-preview").textContent = [a.detail, a.cost + " points"]
       .filter(Boolean)
-      .join(" Â· ");
+      .join(" · ");
     updateEntryFacts(section, {mechanics:a, xmlId:select.value});
   } catch (error) {
     $("#simple-ability-preview").textContent = error.message;
@@ -920,9 +936,9 @@ function updateSkillBuilder() {
     });
     $("#skill-preview").textContent = [
       s.characteristic || "General",
-      s.roll + "âˆ’",
+      s.roll + "-",
       s.cost + " points",
-    ].join(" Â· ");
+    ].join(" · ");
     updateEntryFacts("skills", {mechanics:s, xmlId:$("#skill-key").value});
   } catch (error) {
     $("#skill-preview").textContent = error.message;
@@ -968,7 +984,7 @@ function updatePowerBuilder() {
       p.end + " END",
     ]
       .filter(Boolean)
-      .join(" Â· ");
+      .join(" · ");
     updateEntryFacts("powers", {mechanics:{...p,modifiers:[advantage,limitation].filter(Boolean),status:"converted"},xmlId:$("#power-key").value});
   } catch (error) {
     $("#power-preview").textContent = error.message;
@@ -985,9 +1001,11 @@ function updateEntryFacts(section, entry) {
 }
 function prepareExistingEntryBuilder(section, entry) {
   const m=entry.mechanics||{};
-  for(const id of ["equipment-builder","disadvantage-builder","simple-ability-builder","skill-builder","power-builder","special-builder"]) $("#"+id).hidden=true;
+  for(const id of ["equipment-builder","disadvantage-builder","simple-ability-builder","skill-builder","power-builder","martial-builder","special-builder"]) $("#"+id).hidden=true;
   if(section==="skills"&&SKILLS_4E[m.key]){
     $("#skill-key").value=m.key;$("#skill-improvements").value=m.improvements??entry.levels??0;$("#skill-familiarity").checked=Boolean(m.familiarity);$("#skill-characteristic").checked=Boolean(m.characteristicBased);updateSkillBuilder();
+  }else if(section==="martialarts"&&MARTIAL_MANEUVERS_4E[m.key]){
+    $("#martial-key").value=m.key;$("#martial-category").value=m.category||"Hand-To-Hand";$("#martial-use-weapon").checked=Boolean(m.useWeapon);updateMartialBuilder();
   }else if(section==="powers"&&!m.isFramework&&POWER_CATALOG_4E[m.key]){
     $("#power-key").value=m.key;$("#power-levels").value=entry.levels||m.levels||1;
     $("#power-advantage-key").value=m.advantages?"custom":"none";$("#power-limitation-key").value=m.limitations?"custom":"none";$("#power-advantages").value=m.advantages||0;$("#power-limitations").value=m.limitations||0;$("#power-advantage-name").value=(m.modifiers||[]).find(mod=>mod.kind==="advantage")?.name||"Advantages";$("#power-limitation-name").value=(m.modifiers||[]).find(mod=>mod.kind==="limitation")?.name||"Limitations";refreshFrameworkChoices();if(m.frameworkId)$("#power-framework").value=m.frameworkId;if(m.slotKind)$("#power-slot-kind").value=m.slotKind;updatePowerBuilder();
@@ -1012,7 +1030,7 @@ $("#power-key").innerHTML = Object.entries(POWER_CATALOG_4E)
   .map(([key, p]) => '<option value="' + key + '">' + p.label + "</option>")
   .join("");
 fillModifierSelect("#power-advantage-key", POWER_ADVANTAGES_4E, "+");
-fillModifierSelect("#power-limitation-key", POWER_LIMITATIONS_4E, "âˆ’");
+fillModifierSelect("#power-limitation-key", POWER_LIMITATIONS_4E, "-");
 $("#equipment-kind").innerHTML = Object.entries(EQUIPMENT_TYPES_4E)
   .map(([key, e]) => '<option value="' + key + '">' + e.label + "</option>")
   .join("");
@@ -1052,6 +1070,7 @@ $("#entry-new-section").addEventListener("change", () => {
   updateSimpleAbilityBuilder();
   updateDisadvantageBuilder(true);
   updateEquipmentBuilder();
+  updateMartialBuilder();
 });
 for (const id of ["simple-ability-key", "simple-ability-levels"])
   $("#" + id).addEventListener("input", updateSimpleAbilityBuilder);
@@ -1074,6 +1093,26 @@ for (const id of [
 ])
   $("#" + id).addEventListener("input", updatePowerBuilder);
 
+
+// Fourth Edition core Martial Maneuvers are selected, not improvised.
+$("#entry-section-label").insertAdjacentHTML("afterend", `<div id="martial-builder" hidden>
+  <label>Martial Maneuver<select id="martial-key"></select></label>
+  <label>Martial Arts category<input id="martial-category" value="Hand-To-Hand" /></label>
+  <label class="check"><input id="martial-use-weapon" type="checkbox" /> Use with weapon</label>
+  <div id="martial-preview" class="power-preview"></div>
+</div>`);
+$("#martial-key").innerHTML=Object.entries(MARTIAL_MANEUVERS_4E).map(([key,m])=>`<option value="${key}">${m.label} (${m.cost} points)</option>`).join("");
+function updateMartialBuilder(){
+  const visible=$("#entry-new-section").value==="martialarts";
+  $("#martial-builder").hidden=!visible;
+  if(!visible)return;
+  try{
+    const maneuver=buildMartialManeuver4e({key:$("#martial-key").value,category:$("#martial-category").value,useWeapon:$("#martial-use-weapon").checked});
+    $("#martial-preview").textContent=martialManeuverSummary4e(maneuver);
+    updateEntryFacts("martialarts",maneuver);
+  }catch(error){$("#martial-preview").textContent=error.message;}
+}
+for(const id of ["martial-key","martial-category","martial-use-weapon"]) $("#"+id).addEventListener("input",updateMartialBuilder);
 // Fourth Edition frameworks and Skill Enhancers are first-class creation modes.
 $("#entry-name").required = false;
 $("#identity-name").required = false;
@@ -1119,7 +1158,7 @@ function updateSpecialBuilder() {
   if (catalog[prior]) $("#special-kind").value = prior;
   $("#framework-fields").hidden = section !== "framework";
   if (section === "enhancer") {
-    $("#special-preview").textContent = "3 points Â· reduces the cost of each affected Skill by 1 point";
+    $("#special-preview").textContent = "3 points · reduces the cost of each affected Skill by 1 point";
     return;
   }
   try {
@@ -1145,7 +1184,7 @@ $("#entry-form").addEventListener("submit", (event) => {
     current.sections[section] ??= [];
     current.sections[section].push(entry);
     markHdcDirty(); syncFrameworkCosts(); $("#entry-dialog").close(); renderEntries(); renderProfile();
-    toast(`${entry.alias} added â€” save the character`);
+    toast(`${entry.alias} added — save the character`);
   } catch (error) { toast(error.message); }
 }, {capture:true});
 
@@ -1203,6 +1242,7 @@ $("#add-entry").addEventListener("click", () => {
   updateSimpleAbilityBuilder();
   updateDisadvantageBuilder(true);
   updateEquipmentBuilder();
+  updateMartialBuilder();
   $("#entry-dialog").showModal();
 });
 $("#cancel-entry").addEventListener("click", () => $("#entry-dialog").close());
@@ -1247,7 +1287,7 @@ $("#profile-form").addEventListener("submit", (event) => {
   markHdcDirty();
   $("#profile-dialog").close();
   renderProfile();
-  toast("Profile updated â€” save the character");
+  toast("Profile updated — save the character");
 });
 $("#cancel-profile").addEventListener("click", () =>
   $("#profile-dialog").close(),
@@ -1257,7 +1297,7 @@ $("#portrait-input").addEventListener("change", async (event) => {
     status = $("#portrait-status");
   if (!file) return;
   try {
-    status.textContent = "Preparing " + file.name + "â€¦";
+    status.textContent = "Preparing " + file.name + "…";
     toast("Preparing character art...");
     current.portrait = await preparePortrait(file);
     saveCharacter(current);
@@ -1276,7 +1316,7 @@ $("#portrait-input").addEventListener("change", async (event) => {
 $("#remove-portrait").addEventListener("click", () => {
   current.portrait = null;
   renderPortraits();
-  toast("Portrait removed â€” save the character");
+  toast("Portrait removed — save the character");
 });
 $("#identity-button").addEventListener("click", () => {
   $("#identity-name").value = current.name;
