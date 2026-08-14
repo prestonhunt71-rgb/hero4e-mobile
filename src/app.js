@@ -83,6 +83,9 @@ import {
   hasPhase,
   recoverResources,
   speedPhases,
+  hitLocation4e,
+  knockback4e,
+  presenceAttack4e,
 } from "./combat.js";
 let current = null;
 let installPrompt = null;
@@ -1258,7 +1261,9 @@ $("#add-entry").addEventListener("click", () => {
 $("#cancel-entry").addEventListener("click", () => $("#entry-dialog").close());
 $("#export-json").addEventListener("click", exportJson);
 $("#export-foundry").addEventListener("click", exportFoundry);
-$("#export-hdc").addEventListener("click", exportHdc);
+$("#roll-hit-location").addEventListener("click",()=>{const dice=Array.from({length:3},()=>1+Math.floor(Math.random()*6)),total=dice.reduce((a,b)=>a+b,0),location=hitLocation4e(total);$("#hit-location-result").textContent=`${dice.join(" + ")} = ${total}: ${location.name} · STUNx ${location.stunX} · Normal STUN x${location.nStun} · BODY x${location.bodyX} · Placed Shot ${location.toHit} OCV`;});
+$("#roll-knockback").addEventListener("click",()=>{const count=Number($("#knockback-dice").value),dice=Array.from({length:count},()=>1+Math.floor(Math.random()*6)),result=knockback4e($("#knockback-body").value,{dice,resistance:$("#knockback-resistance").value,impact:$("#knockback-impact").value});$("#knockback-result").textContent=`${result.body} BODY − ${dice.join(" + ")} = ${result.result}${result.impactDice?` · ${result.impactDice}d6 possible impact damage`:""} · ${result.reference}`;});
+$("#roll-presence").addEventListener("click",()=>{const dice=Math.max(0,Math.floor(Number(current.characteristics.PRE||0)/5)+Number($("#presence-modifier").value||0)),values=Array.from({length:dice},()=>1+Math.floor(Math.random()*6)),result=presenceAttack4e(current.characteristics.PRE,{roll:values.reduce((a,b)=>a+b,0),modifierDice:$("#presence-modifier").value,targetPre:$("#presence-target-pre").value,targetEgo:$("#presence-target-ego").value});$("#presence-result").textContent=`${dice}d6 = ${result.total} vs. ${result.defense}: ${result.effect} · ${result.reference}`;});$("#export-hdc").addEventListener("click", exportHdc);
 $("#save-pdf").addEventListener("click",()=>{try{saveCharacterPdf(current);toast("Letter-size PDF downloaded");}catch(error){toast(error.message);}});
 $("#print-character").addEventListener("click",()=>{try{printCharacter(current);}catch(error){toast(error.message);}});
 $("#sheet-portrait").addEventListener("click",()=>openArt(current));

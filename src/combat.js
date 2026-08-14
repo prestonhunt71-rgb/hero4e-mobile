@@ -9,3 +9,19 @@ export function addPhaseAction(state={},actionId){const action=ACTION_TIMING_4E[
 export function clearPhaseActions(){return {used:0,ended:false,held:false,log:[],legal:true,error:null};}
 export function applyDefenses4e(damage,{defense=0,resistantDefense=0}={}){const stun=Number(damage?.stun),body=Number(damage?.body),total=Math.max(0,Number(defense)),resistant=Math.max(0,Number(resistantDefense));if(![stun,body,total,resistant].every(Number.isFinite))throw new TypeError("Fourth Edition damage and defenses must be numeric.");if(damage.type==="normal")return {stun:Math.max(0,stun-total),body:Math.max(0,body-total)};if(damage.type!=="killing")throw new RangeError("Unknown Fourth Edition damage type: "+damage.type);const bodyTaken=Math.max(0,body-resistant);return {stun:Math.max(bodyTaken,stun-total),body:bodyTaken};}
 export function applyDamage4e(current,damage,defenses,constitution=10){const taken=applyDefenses4e(damage,defenses),next={BODY:Number(current.BODY)-taken.body,STUN:Number(current.STUN)-taken.stun,END:Number(current.END)},statuses={stunned:taken.stun>=Number(constitution),unconscious:Number(current.STUN)-taken.stun<=0,dead:Number(current.BODY)-taken.body<=-Math.abs(Number(current.BODY))};return {current:next,taken,statuses};}
+
+export const HIT_LOCATIONS_4E=Object.freeze([
+ {min:3,max:5,name:"Head",stunX:5,nStun:2,bodyX:2,toHit:-8},
+ {min:6,max:6,name:"Hands",stunX:1,nStun:.5,bodyX:.5,toHit:-6},
+ {min:7,max:8,name:"Arms",stunX:2,nStun:.5,bodyX:.5,toHit:-5},
+ {min:9,max:9,name:"Shoulders",stunX:3,nStun:1,bodyX:1,toHit:-5},
+ {min:10,max:11,name:"Chest",stunX:3,nStun:1,bodyX:1,toHit:-3},
+ {min:12,max:12,name:"Stomach",stunX:4,nStun:1.5,bodyX:1,toHit:-7},
+ {min:13,max:13,name:"Vitals",stunX:4,nStun:1.5,bodyX:2,toHit:-8},
+ {min:14,max:14,name:"Thighs",stunX:2,nStun:1,bodyX:1,toHit:-4},
+ {min:15,max:16,name:"Legs",stunX:2,nStun:.5,bodyX:.5,toHit:-6},
+ {min:17,max:18,name:"Feet",stunX:1,nStun:.5,bodyX:.5,toHit:-8},
+].map(Object.freeze));
+export function hitLocation4e(total){const roll=Number(total);if(!Number.isInteger(roll)||roll<3||roll>18)throw new RangeError("Hit Location requires a 3d6 total from 3 through 18.");return HIT_LOCATIONS_4E.find(location=>roll>=location.min&&roll<=location.max);}
+export function knockback4e(body,{dice=[1,1],resistance=0,impact="ground"}={}){const bodyDone=Math.max(0,Number(body)||0),rolled=Array.isArray(dice)?dice.reduce((sum,value)=>sum+Number(value||0),0):Number(dice)||0,raw=bodyDone-rolled,distance=Math.max(0,raw-Math.max(0,Number(resistance)||0));return {body:bodyDone,roll:rolled,raw,distance,knockedDown:raw===0||distance>0,result:raw<0?"No Knockback":distance>0?`${distance}\" Knockback`:"Knocked down",impactDice:impact==="wall"?distance:Math.floor(distance/2),reference:"BBB p. 166"};}
+export function presenceAttack4e(pre,{roll=0,modifierDice=0,targetPre=10,targetEgo=10}={}){const dice=Math.max(0,Math.floor(Number(pre||0)/5)+Number(modifierDice||0)),total=Number(roll)||0,defense=Math.max(Number(targetPre)||0,Number(targetEgo)||0),margin=total-defense;let level=0,effect="No listed effect";if(margin>=30){level=4;effect="Cowed";}else if(margin>=20){level=3;effect="Awed";}else if(margin>=10){level=2;effect="Very impressed";}else if(margin>=0){level=1;effect="Impressed";}return {dice,total,defense,margin,level,effect,reference:"BBB p. 170"};}

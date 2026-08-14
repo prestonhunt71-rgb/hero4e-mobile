@@ -237,7 +237,14 @@
               No damage applied.
             </div>
           </div>
-          <div class="combat-controls">
+          <details class="optional-combat">
+            <summary>Optional Combat Tools <span>BBB pp. 162, 166, 170</span></summary>
+            <div class="optional-combat-grid">
+              <section><h4>Hit Location</h4><p>Roll the Fourth Edition 3d6 Hit Location table.</p><button id="roll-hit-location" type="button">Roll Hit Location</button><div id="hit-location-result" class="power-preview">No roll yet.</div></section>
+              <section><h4>Knockback</h4><label>BODY done<input id="knockback-body" type="number" min="0" value="0"></label><label>Knockback dice<select id="knockback-dice"><option value="1">1d6</option><option value="2" selected>2d6</option><option value="3">3d6</option><option value="4">4d6</option><option value="5">5d6</option></select></label><label>Knockback Resistance<input id="knockback-resistance" type="number" min="0" value="0"></label><label>Impact<select id="knockback-impact"><option value="ground">Ground</option><option value="wall">Wall</option></select></label><button id="roll-knockback" type="button">Roll Knockback</button><div id="knockback-result" class="power-preview">No roll yet.</div></section>
+              <section><h4>Presence Attack</h4><label>Modifier dice<input id="presence-modifier" type="number" value="0"></label><label>Target PRE<input id="presence-target-pre" type="number" min="0" value="10"></label><label>Target EGO<input id="presence-target-ego" type="number" min="0" value="10"></label><button id="roll-presence" type="button">Roll Presence Attack</button><div id="presence-result" class="power-preview">Uses the character’s PRE.</div></section>
+            </div>
+          </details>          <div class="combat-controls">
             <button id="previous-segment" class="quiet">Previous</button
             ><button id="next-segment" class="primary">Next segment</button
             ><button id="take-recovery">Recovery</button
