@@ -151,7 +151,7 @@ function renderLibrary() {
     ? all
         .map(
           (c, index) =>
-            `<button class="character-card" data-id="${c.id}"><span class="avatar" ${c.portrait?.dataUrl ? 'data-view-art="true" title="View character art"' : ""}>${c.portrait?.dataUrl ? `<img src="${c.portrait.dataUrl}" alt="" />` : escapeHtml(c.name.slice(0, 1).toUpperCase())}</span><span><strong>${c.name}</strong><small>${c.source?.type === "hdc" ? "Hero Designer import" : "HERO4E original"} · SPD ${c.characteristics.SPD}${c.profile?.alternateIdentities ? ` · ${escapeHtml(c.profile.alternateIdentities)}` : ""}</small></span><span class="chevron">${String(index + 1).padStart(2, "0")} ›</span></button>`,
+            `<button class="character-card" data-id="${c.id}"><span class="avatar${c.portrait?.dataUrl ? " has-art" : ""}" ${c.portrait?.dataUrl ? 'data-view-art="true" title="View full-size character art" aria-label="View full-size character art"' : ""}>${c.portrait?.dataUrl ? `<img src="${c.portrait.dataUrl}" alt="" /><span class="art-badge" aria-hidden="true">ART</span>` : escapeHtml(c.name.slice(0, 1).toUpperCase())}</span><span><strong>${c.name}</strong><small>${c.source?.type === "hdc" ? "Hero Designer import" : "HERO4E original"} · SPD ${c.characteristics.SPD}${c.profile?.alternateIdentities ? ` · ${escapeHtml(c.profile.alternateIdentities)}` : ""}</small></span><span class="chevron">${String(index + 1).padStart(2, "0")} ›</span></button>`,
         )
         .join("")
     : `<div class="empty"><strong>${stored.length ? "No matching heroes" : "No characters yet"}</strong><p>${stored.length ? "Try a different name or identity." : "Your roster is stored locally on this device."}</p></div>`;
@@ -736,6 +736,7 @@ $("#entry-form").addEventListener("submit", (event) => {
                     limitationKey: $("#power-limitation-key").value,
                     advantageName: $("#power-advantage-name").value,
                     limitationName: $("#power-limitation-name").value,
+                    modifiers: additionalPowerModifiers,
                     options: collectPowerOptions(),
                     notes: $("#entry-notes").value,
                   })
@@ -773,9 +774,9 @@ function updateExistingEntryFromForm(section, entry) {
     const rebuilt=buildFramework4e({kind:$("#special-kind").value,name:entry.name,points:Number($("#framework-points").value),advantages:Number($("#framework-advantages").value),limitations:Number($("#framework-limitations").value),notes:entry.notes});
     entry.xmlId=rebuilt.xmlId;entry.alias=rebuilt.alias;entry.levels=rebuilt.levels;entry.baseCost=rebuilt.baseCost;entry.mechanics=rebuilt.mechanics;
   } else if (section === "powers" && !entry.mechanics?.isFramework && POWER_CATALOG_4E[$("#power-key").value]) {
-    const advantage=selectedModifier("advantage"), limitation=selectedModifier("limitation"), frameworkId=$("#power-framework").value||undefined,framework=(current.sections?.powers||[]).find(item=>item.id===frameworkId),preserved={frameworkId,frameworkName:framework?.name,slotKind:framework?.mechanics?.kind==="multipower"?$("#power-slot-kind").value:frameworkId?"framework":undefined};
+    const powerModifiers=allPowerModifiers(), advantageTotal=powerModifiers.filter(item=>item.value>0).reduce((sum,item)=>sum+Math.abs(item.value),0), limitationTotal=powerModifiers.filter(item=>item.value<0).reduce((sum,item)=>sum+Math.abs(item.value),0), frameworkId=$("#power-framework").value||undefined,framework=(current.sections?.powers||[]).find(item=>item.id===frameworkId),preserved={frameworkId,frameworkName:framework?.name,slotKind:framework?.mechanics?.kind==="multipower"?$("#power-slot-kind").value:frameworkId?"framework":undefined};
     entry.levels=Number($("#power-levels").value||1); entry.xmlId=$("#power-key").value;
-    entry.mechanics={...calculatePowerCost4e(entry.xmlId,entry.levels,{advantages:Math.abs(advantage?.value||0),limitations:Math.abs(limitation?.value||0),options:collectPowerOptions()}),effect:entry.levels+" "+POWER_CATALOG_4E[entry.xmlId].unit,modifiers:[advantage,limitation].filter(Boolean),status:"converted",pricingBasis:"Fourth Edition",...Object.fromEntries(Object.entries(preserved).filter(([,value])=>value))};
+    entry.mechanics={...calculatePowerCost4e(entry.xmlId,entry.levels,{advantages:advantageTotal,limitations:limitationTotal,options:collectPowerOptions()}),effect:entry.levels+" "+POWER_CATALOG_4E[entry.xmlId].unit,modifiers:powerModifiers,status:"converted",pricingBasis:"Fourth Edition",...Object.fromEntries(Object.entries(preserved).filter(([,value])=>value))};
     entry.baseCost=entry.mechanics.baseCost;
   } else if ((section === "talents" || section === "perks") && !entry.mechanics?.isSkillEnhancer) {
     const key=$("#simple-ability-key").value,levels=Number($("#simple-ability-levels").value||0),mechanics=section==="talents"?calculateTalent4e(key,current.characteristics,levels):calculatePerk4e(key,levels);
@@ -953,6 +954,13 @@ function updateSkillBuilder() {
     $("#skill-preview").textContent = error.message;
   }
 }
+let additionalPowerModifiers = [];
+function allPowerModifiers() { return [...additionalPowerModifiers, selectedModifier("advantage"), selectedModifier("limitation")].filter(Boolean); }
+function renderPowerModifierList() {
+  const host=$("#power-modifier-list");
+  host.innerHTML=additionalPowerModifiers.map((modifier,index)=>`<span class="modifier-chip">${escapeHtml(modifier.name)} (${modifier.value>0?"+":"âˆ’"}${Math.abs(modifier.value)}) <button type="button" data-remove-power-modifier="${index}" aria-label="Remove ${escapeHtml(modifier.name)}">Ã—</button></span>`).join(" ");
+  host.hidden=!additionalPowerModifiers.length;
+}
 function collectPowerOptions() {
   return Object.fromEntries([...document.querySelectorAll("[data-power-option]")].map((node) => [node.dataset.powerOption, node.type === "checkbox" ? node.checked : node.type === "number" ? Number(node.value || 0) : node.value]));
 }
@@ -968,7 +976,9 @@ function renderPowerOptions(saved = null) {
     lifeSupport: checkbox("unusualBreathing","Breathe in one unusual environment (5)")+checkbox("selfContainedBreathing","Self-contained breathing (10)")+checkbox("noEating","Need not eat, excrete, or sleep (5)")+checkbox("vacuum","Safe in vacuum/high pressure (3)")+checkbox("radiation","Safe in high radiation (3)")+checkbox("heatCold","Safe in intense heat/cold (3)")+checkbox("disease","Immune to disease (3)")+checkbox("aging","Immune to aging (3)"),
     mindLink: checkbox("relatedGroup","Related group, one at a time (+5)")+checkbox("anyMind","Any one mind (+5)")+'<label>Number-of-minds doublings<input type="number" min="0" step="1" value="0" data-power-option="mindDoublings" /></label>'+checkbox("anyDistance","Any distance (+5)")+checkbox("anyDimension","Any dimension (+5)"),
     missileDeflection: '<label>Bonus to Deflection Roll<input type="number" min="0" step="1" value="0" data-power-option="rollBonus" /></label><label>Reflection<select data-power-option="reflection"><option value="none">No Reflection</option><option value="attacker">Back at attacker (+20)</option><option value="any">At any target (+30)</option></select></label>',
-    transform: '<label>Transformation class<select data-power-option="severity"><option value="cosmetic">Cosmetic (5 points/d6)</option><option value="minor">Minor (10 points/d6)</option><option value="major" selected>Major (15 points/d6)</option></select></label>'
+    transform: '<label>Transformation class<select data-power-option="severity"><option value="cosmetic">Cosmetic (5 points/d6)</option><option value="minor">Minor (10 points/d6)</option><option value="major" selected>Major (15 points/d6)</option></select></label>',
+    enhancedSenses: '<label>Sense or modifier<select data-power-option="sense"><option value="activeSonar">Active Sonar (15)</option><option value="discriminatory">Discriminatory Sense (5)</option><option value="enhancedPerceptionAll">Enhanced Perception, all senses (3/+1)</option><option value="enhancedPerceptionOne">Enhanced Perception, one sense (2/+1)</option><option value="highRangeRadio">High Range Radio Hearing (10)</option><option value="infrared" selected>Infrared Vision (5)</option><option value="mentalAwareness">Mental Awareness (3)</option><option value="microscopic">Microscopic Vision (3/level)</option><option value="nRay">N-Ray Vision (20)</option><option value="radar">Radar Sense (15)</option><option value="radioHearing">Radio Hearing (3)</option><option value="radioTransmit">Radio Listen and Transmit (5)</option><option value="rangeOne">Range, one sense (5)</option><option value="rangeGroup">Range, Sense Group (10)</option><option value="spatialAwareness">Spatial Awareness (25)</option><option value="targeting">Targeting Sense (20)</option><option value="telescopic">Telescopic Sense (+2 per 3)</option><option value="trackingScent">Tracking Scent (10)</option><option value="ultrasonic">Ultrasonic Hearing (3)</option><option value="ultraviolet">Ultraviolet Vision (5)</option><option value="sensing360Group">360 Degree Sensing, one group (10)</option><option value="sensing360All">360 Degree Sensing, all senses (25)</option><option value="detect">Detect (3 base)</option></select></label><label class="check"><input type="checkbox" data-power-option="detectSense" /> Detect is a Sense (+2)</label><label>Detect PER bonus<input type="number" min="0" step="1" value="0" data-power-option="perBonus" /></label>',
+    clairsentience: '<label>Additional individual senses<input type="number" min="0" step="1" value="0" data-power-option="additionalSenses" /></label><label>Additional Sense Groups<input type="number" min="0" step="1" value="0" data-power-option="additionalGroups" /></label>'+checkbox("future","See the future (+20)")+checkbox("past","See the past (+20)")+checkbox("otherDimensions","See into other dimensions (+20)")+'<label>Maximum-range doublings<input type="number" min="0" step="1" value="0" data-power-option="rangeDoublings" /></label>',
   };
   host.innerHTML = templates[key] || "";
   host.hidden = !host.innerHTML;
@@ -992,38 +1002,17 @@ function updatePowerBuilder() {
   const powerDefinition=POWER_CATALOG_4E[$("#power-key").value];
   $("#power-level-label").textContent = `Effect amount (${powerDefinition?.unit || "levels"})`;
   $("#power-levels").min=String(powerDefinition?.minimumInput??1);
-  const advantage = selectedModifier("advantage"),
-    limitation = selectedModifier("limitation");
-  $("#power-advantage-custom").hidden =
-    $("#power-advantage-key").value !== "custom";
-  $("#power-limitation-custom").hidden =
-    $("#power-limitation-key").value !== "custom";
+  const advantage=selectedModifier("advantage"), limitation=selectedModifier("limitation"), powerModifiers=allPowerModifiers();
+  const advantageTotal=powerModifiers.filter(item=>item.value>0).reduce((sum,item)=>sum+Math.abs(item.value),0);
+  const limitationTotal=powerModifiers.filter(item=>item.value<0).reduce((sum,item)=>sum+Math.abs(item.value),0);
+  $("#power-advantage-custom").hidden = $("#power-advantage-key").value !== "custom";
+  $("#power-limitation-custom").hidden = $("#power-limitation-key").value !== "custom";
   try {
-    const p = calculatePowerCost4e(
-        $("#power-key").value,
-        Number($("#power-levels").value || 1),
-        {
-          advantages: Math.abs(advantage?.value || 0),
-          limitations: Math.abs(limitation?.value || 0),
-          options: collectPowerOptions(),
-        },
-      ),
-      mods = [advantage, limitation]
-        .filter(Boolean)
-        .map((m) => m.name)
-        .join("; ");
-    $("#power-preview").textContent = [
-      mods,
-      p.activeCost + " Active",
-      p.realCost + " Real",
-      p.end + " END",
-    ]
-      .filter(Boolean)
-      .join(" · ");
-    updateEntryFacts("powers", {mechanics:{...p,modifiers:[advantage,limitation].filter(Boolean),status:"converted"},xmlId:$("#power-key").value});
-  } catch (error) {
-    $("#power-preview").textContent = error.message;
-  }
+    const p=calculatePowerCost4e($("#power-key").value,Number($("#power-levels").value||1),{advantages:advantageTotal,limitations:limitationTotal,options:collectPowerOptions()});
+    const mods=powerModifiers.map(modifier=>modifier.name).join("; ");
+    $("#power-preview").textContent=[mods,p.activeCost+" Active",p.realCost+" Real",p.end+" END"].filter(Boolean).join(" Â· ");
+    updateEntryFacts("powers",{mechanics:{...p,modifiers:powerModifiers,status:"converted"},xmlId:$("#power-key").value});
+  } catch (error) { $("#power-preview").textContent=error.message; }
 }
 function updateEntryFacts(section, entry) {
   const cost = entryPointCost(section, entry);
@@ -1045,7 +1034,7 @@ function prepareExistingEntryBuilder(section, entry) {
     $("#martial-key").value=m.key;$("#martial-category").value=m.category||"Hand-To-Hand";$("#martial-use-weapon").checked=Boolean(m.useWeapon);updateMartialBuilder();
   }else if(section==="powers"&&!m.isFramework&&POWER_CATALOG_4E[m.key]){
     $("#power-key").value=m.key;$("#power-levels").value=entry.levels??m.levels??POWER_CATALOG_4E[m.key].defaultLevels??1;renderPowerOptions(m.options||{});
-    $("#power-advantage-key").value=m.advantages?"custom":"none";$("#power-limitation-key").value=m.limitations?"custom":"none";$("#power-advantages").value=m.advantages||0;$("#power-limitations").value=m.limitations||0;$("#power-advantage-name").value=(m.modifiers||[]).find(mod=>mod.kind==="advantage")?.name||"Advantages";$("#power-limitation-name").value=(m.modifiers||[]).find(mod=>mod.kind==="limitation")?.name||"Limitations";refreshFrameworkChoices();if(m.frameworkId)$("#power-framework").value=m.frameworkId;if(m.slotKind)$("#power-slot-kind").value=m.slotKind;updatePowerBuilder();
+    additionalPowerModifiers=[...(m.modifiers||[])];$("#power-advantage-key").value="none";$("#power-limitation-key").value="none";$("#power-advantages").value=0;$("#power-limitations").value=0;renderPowerModifierList();refreshFrameworkChoices();if(m.frameworkId)$("#power-framework").value=m.frameworkId;if(m.slotKind)$("#power-slot-kind").value=m.slotKind;updatePowerBuilder();
   }else if((section==="talents"||section==="perks")&&!m.isSkillEnhancer&&((section==="talents"?TALENTS_4E:PERKS_4E)[m.key])){
     updateSimpleAbilityBuilder();$("#simple-ability-key").value=m.key;$("#simple-ability-levels").value=m.levels??entry.levels??0;updateSimpleAbilityBuilder();
   }else if(section==="disadvantages"&&DISADVANTAGES_4E[m.key]){
@@ -1086,6 +1075,9 @@ for (const id of [
 $("#disadvantage-key").innerHTML = Object.entries(DISADVANTAGES_4E)
   .map(([key, d]) => '<option value="' + key + '">' + d.label + "</option>")
   .join("");
+$("#add-power-advantage").addEventListener("click",()=>{const modifier=selectedModifier("advantage");if(!modifier)return;additionalPowerModifiers.push(modifier);$("#power-advantage-key").value="none";renderPowerModifierList();updatePowerBuilder();});
+$("#add-power-limitation").addEventListener("click",()=>{const modifier=selectedModifier("limitation");if(!modifier)return;additionalPowerModifiers.push(modifier);$("#power-limitation-key").value="none";renderPowerModifierList();updatePowerBuilder();});
+$("#power-modifier-list").addEventListener("click",event=>{const button=event.target.closest("[data-remove-power-modifier]");if(!button)return;additionalPowerModifiers.splice(Number(button.dataset.removePowerModifier),1);renderPowerModifierList();updatePowerBuilder();});
 $("#power-specific-options").addEventListener("input", updatePowerBuilder);
 $("#power-key").addEventListener("change", () => { const definition=POWER_CATALOG_4E[$("#power-key").value]; $("#power-levels").value=definition?.defaultLevels??1; updatePowerBuilder(); });
 $("#disadvantage-key").addEventListener("change", () =>
@@ -1252,6 +1244,8 @@ $("#add-entry").addEventListener("click", () => {
   $("#entry-levels").value = 0;
   $("#entry-levels").readOnly = true;
   $("#entry-notes").value = "";
+  additionalPowerModifiers=[];
+  renderPowerModifierList();
   $("#power-advantage-key").value = "none";
   $("#power-limitation-key").value = "none";
   $("#power-advantages").value = 0;

@@ -296,6 +296,10 @@ button:active {
   height: 100%;
   object-fit: cover;
 }
+.avatar.has-art { position:relative; overflow:visible; }
+.art-badge { position:absolute; right:-8px; bottom:-7px; padding:2px 4px; border:2px solid #05080b; background:var(--yellow); color:#05080b; font:900 .52rem var(--display); letter-spacing:.04em; transform:rotate(-4deg); }
+.sheet-portrait { position:relative; cursor:zoom-in; }
+.sheet-portrait:has(img)::after { content:"VIEW ART"; position:absolute; right:-7px; bottom:-8px; padding:2px 4px; border:2px solid #05080b; background:var(--yellow); color:#05080b; font:900 .48rem var(--display); white-space:nowrap; transform:rotate(3deg); }
 .chevron {
   font-size: 2rem;
   color: #26343e;
