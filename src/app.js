@@ -649,7 +649,7 @@ function openEntryEditor(section, id) {
   $("#entry-definition").textContent = entryDefinition4e(section, entry);
   $("#entry-reference").textContent = entryReference4e(section, entry);
   $("#entry-notes").value = entry.notes || "";
-  $("#entry-new-section").value = section;
+  $("#entry-new-section").value = entry.mechanics?.isFramework ? "framework" : section;
   prepareExistingEntryBuilder(section, entry);
   $("#entry-dialog").showModal();
 }
@@ -763,6 +763,9 @@ function updateExistingEntryFromForm(section, entry) {
   } else if (section === "martialarts" && MARTIAL_MANEUVERS_4E[$("#martial-key").value]) {
     const rebuilt=buildMartialManeuver4e({key:$("#martial-key").value,name:entry.name,category:$("#martial-category").value,useWeapon:$("#martial-use-weapon").checked,notes:entry.notes});
     entry.xmlId=rebuilt.xmlId;entry.alias=rebuilt.alias;entry.levels=0;entry.mechanics=rebuilt.mechanics;entry.baseCost=rebuilt.baseCost;
+  } else if (section === "powers" && entry.mechanics?.isFramework) {
+    const rebuilt=buildFramework4e({kind:$("#special-kind").value,name:entry.name,points:Number($("#framework-points").value),advantages:Number($("#framework-advantages").value),limitations:Number($("#framework-limitations").value),notes:entry.notes});
+    entry.xmlId=rebuilt.xmlId;entry.alias=rebuilt.alias;entry.levels=rebuilt.levels;entry.baseCost=rebuilt.baseCost;entry.mechanics=rebuilt.mechanics;
   } else if (section === "powers" && !entry.mechanics?.isFramework && POWER_CATALOG_4E[$("#power-key").value]) {
     const advantage=selectedModifier("advantage"), limitation=selectedModifier("limitation"), frameworkId=$("#power-framework").value||undefined,framework=(current.sections?.powers||[]).find(item=>item.id===frameworkId),preserved={frameworkId,frameworkName:framework?.name,slotKind:framework?.mechanics?.kind==="multipower"?$("#power-slot-kind").value:frameworkId?"framework":undefined};
     entry.levels=Number($("#power-levels").value||1); entry.xmlId=$("#power-key").value;
@@ -1002,7 +1005,9 @@ function updateEntryFacts(section, entry) {
 function prepareExistingEntryBuilder(section, entry) {
   const m=entry.mechanics||{};
   for(const id of ["equipment-builder","disadvantage-builder","simple-ability-builder","skill-builder","power-builder","martial-builder","special-builder"]) $("#"+id).hidden=true;
-  if(section==="skills"&&SKILLS_4E[m.key]){
+  if(section==="powers"&&m.isFramework){
+    $("#special-kind").innerHTML='<option value="multipower">Multipower</option><option value="elementalControl">Elemental Control</option><option value="vpp">Variable Power Pool</option>';$("#special-kind").value=m.kind;$("#framework-points").value=m.points||entry.levels||20;$("#framework-advantages").value=m.advantages||0;$("#framework-limitations").value=m.limitations||0;updateSpecialBuilder();
+  }else if(section==="skills"&&SKILLS_4E[m.key]){
     $("#skill-key").value=m.key;$("#skill-improvements").value=m.improvements??entry.levels??0;$("#skill-familiarity").checked=Boolean(m.familiarity);$("#skill-characteristic").checked=Boolean(m.characteristicBased);updateSkillBuilder();
   }else if(section==="martialarts"&&MARTIAL_MANEUVERS_4E[m.key]){
     $("#martial-key").value=m.key;$("#martial-category").value=m.category||"Hand-To-Hand";$("#martial-use-weapon").checked=Boolean(m.useWeapon);updateMartialBuilder();
