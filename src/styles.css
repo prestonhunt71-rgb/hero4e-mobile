@@ -1029,3 +1029,9 @@ button:active {
 .optional-combat-grid h4 { margin:0 0 7px; }
 .optional-combat-grid label { display:grid; grid-template-columns:1fr minmax(76px,110px); align-items:center; gap:8px; margin:5px 0; }
 .optional-combat-grid .power-preview { margin-top:8px; }
+
+:where(button, input, select, textarea, [tabindex]):focus-visible { outline:4px solid var(--yellow); outline-offset:3px; }
+button, .button, input, select { min-height:44px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior:auto !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+}
