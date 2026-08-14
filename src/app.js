@@ -966,7 +966,9 @@ function updatePowerBuilder() {
   const visible = $("#entry-new-section").value === "powers" && !editingFramework;
   $("#power-builder").hidden = !visible;
   if (!visible) return;
-  $("#power-level-label").textContent = `Effect amount (${POWER_CATALOG_4E[$("#power-key").value]?.unit || "levels"})`;
+  const powerDefinition=POWER_CATALOG_4E[$("#power-key").value];
+  $("#power-level-label").textContent = `Effect amount (${powerDefinition?.unit || "levels"})`;
+  $("#power-levels").min=String(powerDefinition?.minimumInput??1);
   const advantage = selectedModifier("advantage"),
     limitation = selectedModifier("limitation");
   $("#power-advantage-custom").hidden =
@@ -1060,6 +1062,7 @@ for (const id of [
 $("#disadvantage-key").innerHTML = Object.entries(DISADVANTAGES_4E)
   .map(([key, d]) => '<option value="' + key + '">' + d.label + "</option>")
   .join("");
+$("#power-key").addEventListener("change", () => { const definition=POWER_CATALOG_4E[$("#power-key").value]; $("#power-levels").value=definition?.defaultLevels??1; updatePowerBuilder(); });
 $("#disadvantage-key").addEventListener("change", () =>
   updateDisadvantageBuilder(true),
 );
