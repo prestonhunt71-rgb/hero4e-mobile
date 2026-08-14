@@ -736,6 +736,7 @@ $("#entry-form").addEventListener("submit", (event) => {
                     limitationKey: $("#power-limitation-key").value,
                     advantageName: $("#power-advantage-name").value,
                     limitationName: $("#power-limitation-name").value,
+                    options: collectPowerOptions(),
                     notes: $("#entry-notes").value,
                   })
                 : {
@@ -774,7 +775,7 @@ function updateExistingEntryFromForm(section, entry) {
   } else if (section === "powers" && !entry.mechanics?.isFramework && POWER_CATALOG_4E[$("#power-key").value]) {
     const advantage=selectedModifier("advantage"), limitation=selectedModifier("limitation"), frameworkId=$("#power-framework").value||undefined,framework=(current.sections?.powers||[]).find(item=>item.id===frameworkId),preserved={frameworkId,frameworkName:framework?.name,slotKind:framework?.mechanics?.kind==="multipower"?$("#power-slot-kind").value:frameworkId?"framework":undefined};
     entry.levels=Number($("#power-levels").value||1); entry.xmlId=$("#power-key").value;
-    entry.mechanics={...calculatePowerCost4e(entry.xmlId,entry.levels,{advantages:Math.abs(advantage?.value||0),limitations:Math.abs(limitation?.value||0)}),effect:entry.levels+" "+POWER_CATALOG_4E[entry.xmlId].unit,modifiers:[advantage,limitation].filter(Boolean),status:"converted",pricingBasis:"Fourth Edition",...Object.fromEntries(Object.entries(preserved).filter(([,value])=>value))};
+    entry.mechanics={...calculatePowerCost4e(entry.xmlId,entry.levels,{advantages:Math.abs(advantage?.value||0),limitations:Math.abs(limitation?.value||0),options:collectPowerOptions()}),effect:entry.levels+" "+POWER_CATALOG_4E[entry.xmlId].unit,modifiers:[advantage,limitation].filter(Boolean),status:"converted",pricingBasis:"Fourth Edition",...Object.fromEntries(Object.entries(preserved).filter(([,value])=>value))};
     entry.baseCost=entry.mechanics.baseCost;
   } else if ((section === "talents" || section === "perks") && !entry.mechanics?.isSkillEnhancer) {
     const key=$("#simple-ability-key").value,levels=Number($("#simple-ability-levels").value||0),mechanics=section==="talents"?calculateTalent4e(key,current.characteristics,levels):calculatePerk4e(key,levels);
@@ -952,6 +953,27 @@ function updateSkillBuilder() {
     $("#skill-preview").textContent = error.message;
   }
 }
+function collectPowerOptions() {
+  return Object.fromEntries([...document.querySelectorAll("[data-power-option]")].map((node) => [node.dataset.powerOption, node.type === "checkbox" ? node.checked : node.type === "number" ? Number(node.value || 0) : node.value]));
+}
+function renderPowerOptions(saved = null) {
+  const key = $("#power-key").value, host = $("#power-specific-options");
+  if (host.dataset.key === key && saved === null) return;
+  host.dataset.key = key;
+  const checkbox = (id,label) => '<label class="check"><input type="checkbox" data-power-option="'+id+'" /> '+label+'</label>';
+  const templates = {
+    damageReduction: checkbox("resistant","Resistant Damage Reduction"),
+    endReserve: '<label>Reserve REC<input type="number" min="0" step="1" value="0" data-power-option="rec" /></label>',
+    extraDimensionalMovement: '<label>Destinations<select data-power-option="scope"><option value="single">One dimension</option><option value="related">Related group (+10)</option><option value="any">Any dimension (+20)</option></select></label>'+checkbox("timeTravel","Travel through time (+20)")+'<label>Mass doublings<input type="number" min="0" step="1" value="0" data-power-option="massDoublings" /></label>',
+    lifeSupport: checkbox("unusualBreathing","Breathe in one unusual environment (5)")+checkbox("selfContainedBreathing","Self-contained breathing (10)")+checkbox("noEating","Need not eat, excrete, or sleep (5)")+checkbox("vacuum","Safe in vacuum/high pressure (3)")+checkbox("radiation","Safe in high radiation (3)")+checkbox("heatCold","Safe in intense heat/cold (3)")+checkbox("disease","Immune to disease (3)")+checkbox("aging","Immune to aging (3)"),
+    mindLink: checkbox("relatedGroup","Related group, one at a time (+5)")+checkbox("anyMind","Any one mind (+5)")+'<label>Number-of-minds doublings<input type="number" min="0" step="1" value="0" data-power-option="mindDoublings" /></label>'+checkbox("anyDistance","Any distance (+5)")+checkbox("anyDimension","Any dimension (+5)"),
+    missileDeflection: '<label>Bonus to Deflection Roll<input type="number" min="0" step="1" value="0" data-power-option="rollBonus" /></label><label>Reflection<select data-power-option="reflection"><option value="none">No Reflection</option><option value="attacker">Back at attacker (+20)</option><option value="any">At any target (+30)</option></select></label>',
+    transform: '<label>Transformation class<select data-power-option="severity"><option value="cosmetic">Cosmetic (5 points/d6)</option><option value="minor">Minor (10 points/d6)</option><option value="major" selected>Major (15 points/d6)</option></select></label>'
+  };
+  host.innerHTML = templates[key] || "";
+  host.hidden = !host.innerHTML;
+  if (saved) for (const node of host.querySelectorAll("[data-power-option]")) { const value=saved[node.dataset.powerOption]; if (value === undefined) continue; if (node.type === "checkbox") node.checked=Boolean(value); else node.value=String(value); }
+}
 function selectedModifier(kind) {
   const prefix = kind === "advantage" ? "advantage" : "limitation",
     key = $("#power-" + prefix + "-key").value,
@@ -966,6 +988,7 @@ function updatePowerBuilder() {
   const visible = $("#entry-new-section").value === "powers" && !editingFramework;
   $("#power-builder").hidden = !visible;
   if (!visible) return;
+  renderPowerOptions();
   const powerDefinition=POWER_CATALOG_4E[$("#power-key").value];
   $("#power-level-label").textContent = `Effect amount (${powerDefinition?.unit || "levels"})`;
   $("#power-levels").min=String(powerDefinition?.minimumInput??1);
@@ -982,6 +1005,7 @@ function updatePowerBuilder() {
         {
           advantages: Math.abs(advantage?.value || 0),
           limitations: Math.abs(limitation?.value || 0),
+          options: collectPowerOptions(),
         },
       ),
       mods = [advantage, limitation]
@@ -1020,7 +1044,7 @@ function prepareExistingEntryBuilder(section, entry) {
   }else if(section==="martialarts"&&MARTIAL_MANEUVERS_4E[m.key]){
     $("#martial-key").value=m.key;$("#martial-category").value=m.category||"Hand-To-Hand";$("#martial-use-weapon").checked=Boolean(m.useWeapon);updateMartialBuilder();
   }else if(section==="powers"&&!m.isFramework&&POWER_CATALOG_4E[m.key]){
-    $("#power-key").value=m.key;$("#power-levels").value=entry.levels||m.levels||1;
+    $("#power-key").value=m.key;$("#power-levels").value=entry.levels??m.levels??POWER_CATALOG_4E[m.key].defaultLevels??1;renderPowerOptions(m.options||{});
     $("#power-advantage-key").value=m.advantages?"custom":"none";$("#power-limitation-key").value=m.limitations?"custom":"none";$("#power-advantages").value=m.advantages||0;$("#power-limitations").value=m.limitations||0;$("#power-advantage-name").value=(m.modifiers||[]).find(mod=>mod.kind==="advantage")?.name||"Advantages";$("#power-limitation-name").value=(m.modifiers||[]).find(mod=>mod.kind==="limitation")?.name||"Limitations";refreshFrameworkChoices();if(m.frameworkId)$("#power-framework").value=m.frameworkId;if(m.slotKind)$("#power-slot-kind").value=m.slotKind;updatePowerBuilder();
   }else if((section==="talents"||section==="perks")&&!m.isSkillEnhancer&&((section==="talents"?TALENTS_4E:PERKS_4E)[m.key])){
     updateSimpleAbilityBuilder();$("#simple-ability-key").value=m.key;$("#simple-ability-levels").value=m.levels??entry.levels??0;updateSimpleAbilityBuilder();
@@ -1062,6 +1086,7 @@ for (const id of [
 $("#disadvantage-key").innerHTML = Object.entries(DISADVANTAGES_4E)
   .map(([key, d]) => '<option value="' + key + '">' + d.label + "</option>")
   .join("");
+$("#power-specific-options").addEventListener("input", updatePowerBuilder);
 $("#power-key").addEventListener("change", () => { const definition=POWER_CATALOG_4E[$("#power-key").value]; $("#power-levels").value=definition?.defaultLevels??1; updatePowerBuilder(); });
 $("#disadvantage-key").addEventListener("change", () =>
   updateDisadvantageBuilder(true),
