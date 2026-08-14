@@ -140,7 +140,7 @@ export function importHdc(xmlText) {
 const NATIVE_HDC_IDS={
   skills:{acrobatics:"ACROBATICS",acting:"ACTING",combatDriving:"COMBAT_DRIVING",demolitions:"DEMOLITIONS",disguise:"DISGUISE",electronics:"ELECTRONICS",seduction:"SEDUCTION",stealth:"STEALTH",streetwise:"STREETWISE",deduction:"DEDUCTION",paramedic:"PARAMEDICS",criminology:"CRIMINOLOGY",shadowing:"SHADOWING",tactics:"TACTICS",knowledge:"KNOWLEDGE_SKILL",professionalSkill:"PROFESSIONAL_SKILL",conversation:"CONVERSATION",highSociety:"HIGH_SOCIETY",persuasion:"PERSUASION"},
   talents:{ambidexterity:"AMBIDEXTERITY",dangerSense:"DANGER_SENSE",resistance:"RESISTANCE",eideticMemory:"EIDETIC_MEMORY"},
-  powers:{energyBlast:"ENERGYBLAST",handToHandAttack:"HANDTOHANDATTACK",armor:"ARMOR",clinging:"CLINGING",invisibility:"INVISIBILITY",flash:"FLASH"},
+  powers:{energyBlast:"ENERGYBLAST",handToHandAttack:"HANDTOHANDATTACK",armor:"ARMOR",clinging:"CLINGING",invisibility:"INVISIBILITY",flash:"FLASH",forceField:"FORCEFIELD",handToHandKillingAttack:"HKA",rangedKillingAttack:"RKA",telekinesis:"TELEKINESIS",telepathy:"TELEPATHY",teleportation:"TELEPORTATION"},
   disadvantages:{dependentNpc:"DEPENDENTNPC",distinctiveFeatures:"DISTINCTIVEFEATURES",hunted:"HUNTED",psychologicalLimitation:"PSYCHOLOGICALLIMITATION",reputation:"REPUTATION",rivalry:"RIVALRY",unluck:"UNLUCK",vulnerability:"VULNERABILITY"},
 };
 const HDC_SECTION_TAGS={skills:"SKILLS",perks:"PERKS",talents:"TALENTS",martialarts:"MARTIALARTS",powers:"POWERS",disadvantages:"DISADVANTAGES",equipment:"EQUIPMENT"};

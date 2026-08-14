@@ -969,6 +969,7 @@ function updatePowerBuilder() {
   const visible = $("#entry-new-section").value === "powers" && !editingFramework;
   $("#power-builder").hidden = !visible;
   if (!visible) return;
+  $("#power-level-label").textContent = `Effect amount (${POWER_CATALOG_4E[$("#power-key").value]?.unit || "levels"})`;
   const advantage = selectedModifier("advantage"),
     limitation = selectedModifier("limitation");
   $("#power-advantage-custom").hidden =
