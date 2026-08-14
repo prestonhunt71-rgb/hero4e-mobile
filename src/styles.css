@@ -1012,3 +1012,11 @@ button:active {
     height: 58px;
   }
 }
+
+.art-dialog { width:min(96vw,900px); height:min(92vh,900px); padding:0; background:#07131e; border:4px solid #05080b; color:var(--paper); }
+.art-dialog::backdrop { background:rgba(0,0,0,.88); }
+.art-toolbar { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px; background:#12283b; position:sticky; top:0; z-index:2; }
+.art-toolbar div { display:flex; gap:5px; }
+.art-toolbar button { min-width:44px; padding:8px; }
+.art-stage { width:100%; height:calc(100% - 62px); overflow:auto; display:grid; place-items:center; touch-action:pinch-zoom; }
+.art-stage img { display:block; max-width:100%; max-height:100%; transform-origin:center; transition:transform .12s ease; }

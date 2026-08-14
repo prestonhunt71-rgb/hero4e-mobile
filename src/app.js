@@ -58,6 +58,7 @@ import {
   skillSummary,
 } from "./skills.js";
 import { preparePortrait } from "./images.js";
+import { printCharacter, saveCharacterPdf } from "./print.js";
 import {
   MARTIAL_MANEUVERS_4E,
   buildMartialManeuver4e,
@@ -147,14 +148,14 @@ function renderLibrary() {
     ? all
         .map(
           (c, index) =>
-            `<button class="character-card" data-id="${c.id}"><span class="avatar">${c.portrait?.dataUrl ? `<img src="${c.portrait.dataUrl}" alt="" />` : escapeHtml(c.name.slice(0, 1).toUpperCase())}</span><span><strong>${c.name}</strong><small>${c.source?.type === "hdc" ? "Hero Designer import" : "HERO4E original"} · SPD ${c.characteristics.SPD}${c.profile?.alternateIdentities ? ` · ${escapeHtml(c.profile.alternateIdentities)}` : ""}</small></span><span class="chevron">${String(index + 1).padStart(2, "0")} ›</span></button>`,
+            `<button class="character-card" data-id="${c.id}"><span class="avatar" ${c.portrait?.dataUrl ? 'data-view-art="true" title="View character art"' : ""}>${c.portrait?.dataUrl ? `<img src="${c.portrait.dataUrl}" alt="" />` : escapeHtml(c.name.slice(0, 1).toUpperCase())}</span><span><strong>${c.name}</strong><small>${c.source?.type === "hdc" ? "Hero Designer import" : "HERO4E original"} Â· SPD ${c.characteristics.SPD}${c.profile?.alternateIdentities ? ` Â· ${escapeHtml(c.profile.alternateIdentities)}` : ""}</small></span><span class="chevron">${String(index + 1).padStart(2, "0")} â€º</span></button>`,
         )
         .join("")
     : `<div class="empty"><strong>${stored.length ? "No matching heroes" : "No characters yet"}</strong><p>${stored.length ? "Try a different name or identity." : "Your roster is stored locally on this device."}</p></div>`;
   document
     .querySelectorAll("[data-id]")
     .forEach((node) =>
-      node.addEventListener("click", () => openCharacter(node.dataset.id)),
+      node.addEventListener("click", (event) => event.target.closest("[data-view-art]") ? openArt(loadCharacters().find(c => c.id === node.dataset.id)) : openCharacter(node.dataset.id)),
     );
 }
 function inputStat(key, value) {
@@ -193,7 +194,7 @@ function syncFrameworkCosts(character = current) {
 }
 function entryMechanicsSummary(section, entry) {
   if (entry.mechanics?.isFramework) return frameworkSummary4e(entry, current.sections?.powers || []);
-  if (entry.mechanics?.isSkillEnhancer) return `Skill Enhancer · ${entry.mechanics.cost} points · -1 to affected skill costs`;
+  if (entry.mechanics?.isSkillEnhancer) return `Skill Enhancer Â· ${entry.mechanics.cost} points Â· -1 to affected skill costs`;
   if (section === "powers") return powerSummary(entry);
   if (section === "skills") return skillSummary(entry);
   if (section === "talents" || section === "perks") return abilitySummary(entry);
@@ -230,7 +231,7 @@ function renderEntries() {
   $("#ability-sections").innerHTML = groups
     .map(
       ([key, entries]) =>
-        `<details ${key === "skills" || key === "powers" ? "open" : ""}><summary>${labels[key] || key} <span>${entries.length}</span></summary><div class="entry-list">${entries.map((entry) => `<button class="entry" data-entry-section="${key}" data-entry-id="${escapeHtml(entry.id)}"><strong>${escapeHtml(entry.name || entry.alias || "Unnamed " + (labels[key] || "item"))}</strong><small>${escapeHtml([entry.alias !== entry.name ? entry.alias : "", entry.option, entry.mechanics ? entryMechanicsSummary(key, entry) : ""].filter(Boolean).join(" · "))}</small></button>`).join("")}</div></details>`,
+        `<details ${key === "skills" || key === "powers" ? "open" : ""}><summary>${labels[key] || key} <span>${entries.length}</span></summary><div class="entry-list">${entries.map((entry) => `<button class="entry" data-entry-section="${key}" data-entry-id="${escapeHtml(entry.id)}"><strong>${escapeHtml(entry.name || entry.alias || "Unnamed " + (labels[key] || "item"))}</strong><small>${escapeHtml([entry.alias !== entry.name ? entry.alias : "", entry.option, entry.mechanics ? entryMechanicsSummary(key, entry) : ""].filter(Boolean).join(" Â· "))}</small></button>`).join("")}</div></details>`,
     )
     .join("");
   document
@@ -240,7 +241,7 @@ function renderEntries() {
         openEntryDetails(node.dataset.entrySection, node.dataset.entryId),
       ),
     );
-  $("#export-hdc").hidden = !current.preservedHdc;
+  $("#export-hdc").hidden = false;
   $("#add-entry").hidden = Boolean(current.preservedHdc);
 }
 function renderProfile() {
@@ -356,7 +357,7 @@ function renderDamageDefenses() {
       status.dead ? "DEAD" : "",
     ]
       .filter(Boolean)
-      .join(" · ") || "Ready";
+      .join(" Â· ") || "Ready";
 }
 function renderCombat() {
   const { segment, turn } = current.combat,
@@ -366,7 +367,7 @@ function renderCombat() {
   current.combat.phase = phase;
   renderDamageDefenses();
   $("#combat-status").textContent =
-    `Turn ${turn} · Segment ${segment} · ${hasPhase(spd, segment) ? "Your Phase" : "No Phase"}`;
+    `Turn ${turn} Â· Segment ${segment} Â· ${hasPhase(spd, segment) ? "Your Phase" : "No Phase"}`;
   $("#speed-chart").innerHTML = Array.from({ length: 12 }, (_, i) => i + 1)
     .map(
       (value) =>
@@ -377,8 +378,8 @@ function renderCombat() {
   $("#phase-status").textContent = phase.held
     ? "Held Action saved"
     : phase.ended
-      ? `Phase complete${labels.length ? ` · ${labels.join(" + ")}` : ""}`
-      : `${1 - Number(phase.used || 0)} Phase remaining${labels.length ? ` · ${labels.join(" + ")}` : ""}`;
+      ? `Phase complete${labels.length ? ` Â· ${labels.join(" + ")}` : ""}`
+      : `${1 - Number(phase.used || 0)} Phase remaining${labels.length ? ` Â· ${labels.join(" + ")}` : ""}`;
   $("#phase-meter-fill").style.width =
     `${Math.min(100, Number(phase.used || 0) * 100)}%`;
   $("#damage-defense-kind").addEventListener("change", renderDamageDefenses);
@@ -432,6 +433,9 @@ function renderPortraits() {
   $("#portrait-preview").innerHTML = markup;
   $("#remove-portrait").hidden = !current.portrait;
 }
+let artZoom = 1;
+function updateArtZoom(){ $("#art-image").style.transform = `scale(${artZoom})`; $("#art-zoom-reset").textContent = `${Math.round(artZoom*100)}%`; }
+function openArt(character=current){ if(!character?.portrait?.dataUrl) return toast("Add character art first"); artZoom=1; $("#art-title").textContent=`${character.name||"Character"} art`; $("#art-image").src=character.portrait.dataUrl; $("#art-image").alt=`${character.name||"Character"} full-size art`; updateArtZoom(); $("#art-dialog").showModal(); }
 function renderSheet() {
   if (!current) return;
   $("#character-name").textContent = current.name;
@@ -577,11 +581,12 @@ function exportFoundry() {
   toast("Foundry Actor downloaded");
 }
 async function exportHdc() {
+  let prototypeHdc = "";
   if (!current?.preservedHdc) {
-    toast("This character has no preserved HDC source");
-    return;
+    try { prototypeHdc = await fetch("./assets/hero-designer-v3-prototypes.hdc").then(response => { if (!response.ok) throw new Error("Prototype library unavailable"); return response.text(); }); }
+    catch (error) { toast(error.message); return; }
   }
-  const hdcText = buildHdc(current);
+  let hdcText; try { hdcText = buildHdc(current, prototypeHdc); } catch (error) { toast(error.message); return; }
   const filename = `${current.name.replace(/[\/:*?"<>|]/g, "-")}.hdc`;
   const file = new File([hdcText], filename, { type: "application/xml" });
   try {
@@ -627,7 +632,7 @@ function renderMartialSpecifications(section,entry){
   const box=$("#detail-martial-specs"),m=entry.mechanics;
   box.hidden=section!=="martialarts"||!m;
   if(box.hidden){box.innerHTML="";return;}
-  const facts=[["Action",m.action],["OCV",m.ocv],["DCV",m.dcv],["Damage Class Bonus",m.damageClasses||"—"],["Damage / Effect",martialManeuverEffect4e(entry,current.characteristics.STR)],["Add STR",m.addStrength?"Yes":"No"],["Use Weapon",m.useWeapon?"Yes":"No"],["Category",m.category]];
+  const facts=[["Action",m.action],["OCV",m.ocv],["DCV",m.dcv],["Damage Class Bonus",m.damageClasses||"â€”"],["Damage / Effect",martialManeuverEffect4e(entry,current.characteristics.STR)],["Add STR",m.addStrength?"Yes":"No"],["Use Weapon",m.useWeapon?"Yes":"No"],["Category",m.category]];
   if(m.weaponEffect)facts.push(["Weapon Effect",m.weaponEffect]);
   box.innerHTML=facts.map(([label,value])=>`<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("");
 }
@@ -754,7 +759,7 @@ $("#entry-form").addEventListener("submit", (event) => {
   $("#entry-dialog").close();
   renderEntries();
   renderProfile();
-  toast(`${sectionLabels()[section] || "Character ability"} updated — save the character`);
+  toast(`${sectionLabels()[section] || "Character ability"} updated â€” save the character`);
 });
 function updateExistingEntryFromForm(section, entry) {
   if (section === "skills" && SKILLS_4E[$("#skill-key").value]) {
@@ -817,7 +822,7 @@ $("#delete-entry").addEventListener("click", () => {
   $("#entry-dialog").close();
   renderEntries();
   renderProfile();
-  toast("Ability removed — export creates updated HDC");
+  toast("Ability removed â€” export creates updated HDC");
 });
 function updateEquipmentBuilder() {
   const visible = $("#entry-new-section").value === "equipment";
@@ -887,7 +892,7 @@ function updateDisadvantageBuilder(rebuild = false) {
     });
   $("#disadvantage-preview").textContent = [d.detail, d.cost + " points"]
     .filter(Boolean)
-    .join(" · ");
+    .join(" Â· ");
   updateEntryFacts("disadvantages", {mechanics:d, xmlId:key});
 }
 function updateSimpleAbilityBuilder() {
@@ -918,7 +923,7 @@ function updateSimpleAbilityBuilder() {
           );
     $("#simple-ability-preview").textContent = [a.detail, a.cost + " points"]
       .filter(Boolean)
-      .join(" · ");
+      .join(" Â· ");
     updateEntryFacts(section, {mechanics:a, xmlId:select.value});
   } catch (error) {
     $("#simple-ability-preview").textContent = error.message;
@@ -941,7 +946,7 @@ function updateSkillBuilder() {
       s.characteristic || "General",
       s.roll + "-",
       s.cost + " points",
-    ].join(" · ");
+    ].join(" Â· ");
     updateEntryFacts("skills", {mechanics:s, xmlId:$("#skill-key").value});
   } catch (error) {
     $("#skill-preview").textContent = error.message;
@@ -987,7 +992,7 @@ function updatePowerBuilder() {
       p.end + " END",
     ]
       .filter(Boolean)
-      .join(" · ");
+      .join(" Â· ");
     updateEntryFacts("powers", {mechanics:{...p,modifiers:[advantage,limitation].filter(Boolean),status:"converted"},xmlId:$("#power-key").value});
   } catch (error) {
     $("#power-preview").textContent = error.message;
@@ -1163,7 +1168,7 @@ function updateSpecialBuilder() {
   if (catalog[prior]) $("#special-kind").value = prior;
   $("#framework-fields").hidden = section !== "framework";
   if (section === "enhancer") {
-    $("#special-preview").textContent = "3 points · reduces the cost of each affected Skill by 1 point";
+    $("#special-preview").textContent = "3 points Â· reduces the cost of each affected Skill by 1 point";
     return;
   }
   try {
@@ -1189,7 +1194,7 @@ $("#entry-form").addEventListener("submit", (event) => {
     current.sections[section] ??= [];
     current.sections[section].push(entry);
     markHdcDirty(); syncFrameworkCosts(); $("#entry-dialog").close(); renderEntries(); renderProfile();
-    toast(`${entry.alias} added — save the character`);
+    toast(`${entry.alias} added â€” save the character`);
   } catch (error) { toast(error.message); }
 }, {capture:true});
 
@@ -1254,6 +1259,13 @@ $("#cancel-entry").addEventListener("click", () => $("#entry-dialog").close());
 $("#export-json").addEventListener("click", exportJson);
 $("#export-foundry").addEventListener("click", exportFoundry);
 $("#export-hdc").addEventListener("click", exportHdc);
+$("#save-pdf").addEventListener("click",()=>{try{saveCharacterPdf(current);toast("Letter-size PDF downloaded");}catch(error){toast(error.message);}});
+$("#print-character").addEventListener("click",()=>{try{printCharacter(current);}catch(error){toast(error.message);}});
+$("#sheet-portrait").addEventListener("click",()=>openArt(current));
+$("#close-art").addEventListener("click",()=>$("#art-dialog").close());
+$("#art-zoom-in").addEventListener("click",()=>{artZoom=Math.min(4,artZoom+.25);updateArtZoom();});
+$("#art-zoom-out").addEventListener("click",()=>{artZoom=Math.max(.5,artZoom-.25);updateArtZoom();});
+$("#art-zoom-reset").addEventListener("click",()=>{artZoom=1;updateArtZoom();});
 $("#profile-button").addEventListener("click", () => {
   for (const key of [
     "alternateIdentities",
@@ -1292,7 +1304,7 @@ $("#profile-form").addEventListener("submit", (event) => {
   markHdcDirty();
   $("#profile-dialog").close();
   renderProfile();
-  toast("Profile updated — save the character");
+  toast("Profile updated â€” save the character");
 });
 $("#cancel-profile").addEventListener("click", () =>
   $("#profile-dialog").close(),
@@ -1302,7 +1314,7 @@ $("#portrait-input").addEventListener("change", async (event) => {
     status = $("#portrait-status");
   if (!file) return;
   try {
-    status.textContent = "Preparing " + file.name + "…";
+    status.textContent = "Preparing " + file.name + "â€¦";
     toast("Preparing character art...");
     current.portrait = await preparePortrait(file);
     saveCharacter(current);
@@ -1321,7 +1333,7 @@ $("#portrait-input").addEventListener("change", async (event) => {
 $("#remove-portrait").addEventListener("click", () => {
   current.portrait = null;
   renderPortraits();
-  toast("Portrait removed — save the character");
+  toast("Portrait removed â€” save the character");
 });
 $("#identity-button").addEventListener("click", () => {
   $("#identity-name").value = current.name;

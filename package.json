@@ -7,5 +7,10 @@
     "start": "node scripts/serve.mjs",
     "test": "node --test test/*.test.mjs"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "jspdf": "^4.2.1"
+  }
 }

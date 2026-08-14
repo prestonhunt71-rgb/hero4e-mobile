@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -85,7 +85,7 @@
           </button>
         </div>
         <label class="roster-search"
-          ><span aria-hidden="true">⌕</span
+          ><span aria-hidden="true">?</span
           ><input
             id="character-search"
             type="search"
@@ -103,7 +103,7 @@
           <button id="back-button" class="icon-button" aria-label="Back">
             &lsaquo;
           </button>
-          <div id="sheet-portrait" class="sheet-portrait"><span>H</span></div>
+          <button id="sheet-portrait" class="sheet-portrait" type="button" aria-label="View character art"><span>H</span></button>
           <button id="identity-button" class="identity-heading">
             <p class="eyebrow">Character sheet</p>
             <h2 id="character-name">Hero</h2>
@@ -115,7 +115,7 @@
             ><button id="export-json" class="quiet">Export HERO4E</button
             ><button id="export-foundry" class="quiet">Export Foundry</button
             ><button id="export-hdc" class="quiet" hidden>Export HDC</button
-            ><button id="save-button" class="quiet">Save</button>
+            ><button id="save-pdf" class="quiet">Save PDF</button><button id="print-character" class="quiet">Print</button><button id="save-button" class="quiet">Save</button>
           </div>
         </div>
         <div id="import-notice" class="notice" hidden></div>
@@ -273,7 +273,7 @@
         >Sheet
       </button>
     </nav>
-    <dialog id="profile-dialog" class="entry-dialog">
+    <dialog id="art-dialog" class="art-dialog"><div class="art-toolbar"><strong id="art-title">Character art</strong><div><button id="art-zoom-out" type="button" aria-label="Zoom out">-</button><button id="art-zoom-reset" type="button">100%</button><button id="art-zoom-in" type="button" aria-label="Zoom in">+</button><button id="close-art" type="button" aria-label="Close">×</button></div></div><div id="art-stage" class="art-stage"><img id="art-image" alt="" /></div></dialog><dialog id="profile-dialog" class="entry-dialog">
       <form id="profile-form">
         <p class="eyebrow">Character details</p>
         <h3>Edit Background and Character Points</h3>
@@ -503,7 +503,7 @@
                 value="0" /></label
             ><label class="check"
               ><input id="skill-familiarity" type="checkbox" /> Familiarity
-              (8−)</label
+              (8-)</label
             ><label id="skill-characteristic-wrap" class="check" hidden
               ><input id="skill-characteristic" type="checkbox" />
               Characteristic-based background skill</label
@@ -582,6 +582,7 @@
       </form>
     </dialog>
     <div id="toast" class="toast" role="status"></div>
+    <script src="vendor/jspdf.umd.min.js"></script>
     <script type="module" src="src/app.js"></script>
   </body>
 </html>

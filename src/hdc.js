@@ -137,12 +137,41 @@ export function importHdc(xmlText) {
   });
 }
 
+const NATIVE_HDC_IDS={
+  skills:{acrobatics:"ACROBATICS",acting:"ACTING",combatDriving:"COMBAT_DRIVING",demolitions:"DEMOLITIONS",disguise:"DISGUISE",electronics:"ELECTRONICS",seduction:"SEDUCTION",stealth:"STEALTH",streetwise:"STREETWISE",deduction:"DEDUCTION",paramedic:"PARAMEDICS",criminology:"CRIMINOLOGY",shadowing:"SHADOWING",tactics:"TACTICS",knowledge:"KNOWLEDGE_SKILL",professionalSkill:"PROFESSIONAL_SKILL",conversation:"CONVERSATION",highSociety:"HIGH_SOCIETY",persuasion:"PERSUASION"},
+  talents:{ambidexterity:"AMBIDEXTERITY",dangerSense:"DANGER_SENSE",resistance:"RESISTANCE",eideticMemory:"EIDETIC_MEMORY"},
+  powers:{energyBlast:"ENERGYBLAST",handToHandAttack:"HANDTOHANDATTACK",armor:"ARMOR",clinging:"CLINGING",invisibility:"INVISIBILITY",flash:"FLASH"},
+  disadvantages:{dependentNpc:"DEPENDENTNPC",distinctiveFeatures:"DISTINCTIVEFEATURES",hunted:"HUNTED",psychologicalLimitation:"PSYCHOLOGICALLIMITATION",reputation:"REPUTATION",rivalry:"RIVALRY",unluck:"UNLUCK",vulnerability:"VULNERABILITY"},
+};
+const HDC_SECTION_TAGS={skills:"SKILLS",perks:"PERKS",talents:"TALENTS",martialarts:"MARTIALARTS",powers:"POWERS",disadvantages:"DISADVANTAGES",equipment:"EQUIPMENT"};
+function nativePrototype(section,entry,prototypes){
+  const nodes=prototypes[section]||[],m=entry.mechanics||{};
+  if(section==="martialarts")return nodes.find(node=>(node.getAttribute("ALIAS")||node.getAttribute("DISPLAY"))===(m.label||entry.alias));
+  if(section==="powers"&&m.isFramework)return nodes.find(node=>(node.getAttribute("ALIAS")||"").toLowerCase()===({multipower:"multipower",elementalControl:"elemental control"}[m.kind]||""));
+  const xmlId=NATIVE_HDC_IDS[section]?.[m.key||entry.xmlId];
+  return nodes.find(node=>node.getAttribute("XMLID")===xmlId);
+}
+function setTextChild(xml,parent,tag,value){let node=parent?.getElementsByTagName(tag)[0];if(!node&&parent){node=xml.createElement(tag);parent.appendChild(node);}if(node)node.textContent=value||"";}
+function exportNativeHdc(character,templateHdc){
+  if(!templateHdc)throw new Error("Native HDC export needs the bundled Hero Designer prototype library.");
+  const xml=new DOMParser().parseFromString(templateHdc,"application/xml");if(xml.querySelector("parsererror"))throw new Error("The bundled Hero Designer prototype library is invalid.");
+  const root=xml.querySelector("CHARACTER"),prototypes={};
+  for(const [section,tag] of Object.entries(HDC_SECTION_TAGS)){const block=root.getElementsByTagName(tag)[0];prototypes[section]=block?[...block.children].map(node=>node.cloneNode(true)):[];if(block)while(block.firstChild)block.removeChild(block.firstChild);}
+  root.querySelector("IMAGE")?.remove();
+  const unsupported=[];for(const [section,entries] of Object.entries(character.sections||{}))for(const entry of entries){if(section==="powers"&&(entry.mechanics?.modifiers||[]).length){unsupported.push(`${entry.name}: Power modifiers need a verified Hero Designer prototype`);continue;}if(!nativePrototype(section,entry,prototypes))unsupported.push(`${entry.name||entry.alias}: no verified ${section} HDC prototype`);}
+  if(unsupported.length)throw new Error("Native HDC export cannot safely represent: "+unsupported.join("; "));
+  root.setAttribute("version","3.0");root.setAttribute("TEMPLATE","builtIn.Superheroic.hdt");
+  const info=root.getElementsByTagName("CHARACTER_INFO")[0],basic=root.getElementsByTagName("BASIC_CONFIGURATION")[0];setAttribute(info,"CHARACTER_NAME",character.name||"");setAttribute(info,"PLAYER_NAME",character.playerName||"");setAttribute(info,"ALTERNATE_IDENTITIES",character.profile?.alternateIdentities||"");setAttribute(info,"CAMPAIGN_NAME",character.profile?.campaignName||"");for(const [key,tag] of Object.entries({background:"BACKGROUND",personality:"PERSONALITY",quote:"QUOTE",tactics:"TACTICS",appearance:"APPEARANCE",notes:"NOTES1"}))setTextChild(xml,info,tag,character.profile?.[key]);setAttribute(basic,"BASE_POINTS",character.points?.base||0);setAttribute(basic,"DISAD_POINTS",character.points?.disadvantages||0);setAttribute(basic,"EXPERIENCE",character.points?.experience||0);
+  const block=root.getElementsByTagName("CHARACTERISTICS")[0],bases=figured(character.characteristics),moves=movementBases(character.characteristics);for(const key of primaryKeys)setAttribute(block.getElementsByTagName(key)[0],"LEVELS",Number(character.characteristics[key])-primaryDefinitions[key][0]);for(const key of figuredKeys)setAttribute(block.getElementsByTagName(key)[0],"LEVELS",Number(character.characteristics[key])-bases[key]);for(const key of movementKeys)setAttribute(block.getElementsByTagName(key)[0],"LEVELS",Number(character.characteristics[key])-moves[key]);
+  let sequence=0;const exportedIds=new Map();for(const [section,entries] of Object.entries(character.sections||{})){const target=root.getElementsByTagName(HDC_SECTION_TAGS[section])[0];if(!target)continue;for(const entry of entries){const node=nativePrototype(section,entry,prototypes).cloneNode(true),id=String(1700000000000+sequence++);exportedIds.set(entry.id,id);setAttribute(node,"ID",id);setAttribute(node,"POSITION",target.children.length);setAttribute(node,"LEVELS",entry.levels||0);setAttribute(node,"BASECOST",entry.baseCost||entry.mechanics?.cost||entry.mechanics?.characterPoints||entry.mechanics?.realCost||0);if(entry.name&&entry.name!==entry.alias)setAttribute(node,"NAME",entry.name);node.querySelectorAll("MODIFIER").forEach(mod=>mod.remove());let notes=node.getElementsByTagName("NOTES")[0];if(!notes){notes=xml.createElement("NOTES");node.appendChild(notes);}notes.textContent=entry.notes||"";target.appendChild(node);}}
+  for(const entry of character.sections?.powers||[]){if(!entry.mechanics?.frameworkId)continue;const id=exportedIds.get(entry.id),parent=exportedIds.get(entry.mechanics.frameworkId),node=[...root.getElementsByTagName("POWERS")[0].children].find(item=>item.getAttribute("ID")===id);if(node&&parent){setAttribute(node,"PARENTID",parent);if(entry.mechanics.slotKind==="fixed")setAttribute(node,"ULTRA_SLOT","Yes");}}
+  return new XMLSerializer().serializeToString(xml);
+}
 function setAttribute(node, name, value) {
   if (node) node.setAttribute(name, String(value));
 }
-export function exportHdc(character) {
-  if (!character?.preservedHdc)
-    throw new Error("This character has no preserved HDC source.");
+export function exportHdc(character, templateHdc = "") {
+  if (!character?.preservedHdc) return exportNativeHdc(character, templateHdc);
   if (!character.hdcDirty) return character.preservedHdc;
   const xml = new DOMParser().parseFromString(
     character.preservedHdc,

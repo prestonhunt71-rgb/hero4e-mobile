@@ -1,4 +1,4 @@
-const CACHE = "hero4e-mobile-v36";
+const CACHE = "hero4e-mobile-v37";
 const ASSETS = [
   "./",
   "./index.html",
@@ -11,6 +11,7 @@ const ASSETS = [
   "./src/foundry.js",
   "./src/combat.js",
   "./src/images.js",
+  "./src/print.js",
   "./src/powers.js",
   "./src/skills.js",
   "./src/abilities.js",
@@ -23,6 +24,8 @@ const ASSETS = [
   "./icons/hero4e.svg",
   "./icons/hero4e-180.png",
   "./icons/hero4e-512.png",
+  "./vendor/jspdf.umd.min.js",
+  "./assets/hero-designer-v3-prototypes.hdc",
   "./samples/The%20Iron%20Wolf.hdc",
 ];
 self.addEventListener("install", (event) =>
