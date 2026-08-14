@@ -1,4 +1,4 @@
-const CACHE = "hero4e-mobile-v42";
+const CACHE = "hero4e-mobile-v43";
 const ASSETS = [
   "./",
   "./index.html",
