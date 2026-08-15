@@ -8,10 +8,9 @@ import {
   normalizeCharacter,
   primaryKeys,
   figuredKeys,
-  roll3d6,
-  rollNormalDamage,
-  rollKillingDamage,
 } from "./rules.js";
+import { attackPowerProfile4e } from "./dice.js";
+import { createDiceTray4e } from "./dice-ui.js";
 import { importHdc, exportHdc as buildHdc } from "./hdc.js";
 import {
   deleteCharacter,
@@ -238,13 +237,21 @@ function renderEntries() {
         `<details><summary>${labels[key] || key} <span>${entries.length}</span></summary><div class="entry-list">${entries.map((entry) => `<button class="entry" data-entry-section="${key}" data-entry-id="${escapeHtml(entry.id)}"><strong>${escapeHtml(entry.name || entry.alias || "Unnamed " + (labels[key] || "item"))}</strong><small>${escapeHtml([entry.alias !== entry.name ? entry.alias : "", entry.option, entry.mechanics ? entryMechanicsSummary(key, entry) : ""].filter(Boolean).join(" · "))}</small></button>`).join("")}</div></details>`,
     )
     .join("");
-  document
-    .querySelectorAll("[data-entry-id]")
-    .forEach((node) =>
-      node.addEventListener("click", () =>
-        openEntryDetails(node.dataset.entrySection, node.dataset.entryId),
-      ),
-    );
+  document.querySelectorAll("[data-entry-id]").forEach((node) => {
+    node.addEventListener("click", () => openEntryDetails(node.dataset.entrySection, node.dataset.entryId));
+    const section=node.dataset.entrySection,entry=findEntry(section,node.dataset.entryId),target=entry?.mechanics?.roll,actions=[];
+    if(Number.isFinite(target))actions.push({label:`Roll ${target}−`,aria:`Roll ${entry.name||entry.alias||"ability"}, target ${target} or less`,run:()=>rollAgainstTarget(target,entry.name||entry.alias||"Ability")});
+    const powerProfile=section==="powers"?attackPowerProfile4e(entry?.mechanics?.key):{attack:false};
+    if(powerProfile.attack){
+      actions.push({label:"Attack Roll",aria:`Roll ${entry.name||"Power"} attack`,run:()=>rollPowerAttack(entry)});
+      if(powerProfile.damageMode)actions.push({label:"Damage",aria:`Roll ${entry.name||"Power"} damage`,run:()=>rollPowerDamage(entry)});
+    }
+    if(actions.length){
+      const host=document.createElement("div");host.className="entry-actions";
+      for(const action of actions){const button=document.createElement("button");button.type="button";button.className="entry-roll";button.textContent=action.label;button.setAttribute("aria-label",action.aria);button.addEventListener("click",action.run);host.append(button);}
+      node.insertAdjacentElement("afterend",host);
+    }
+  });
   $("#export-hdc").hidden = false;
   $("#add-entry").hidden = Boolean(current.preservedHdc);
 }
@@ -497,7 +504,7 @@ function renderDerived() {
   const c = current.characteristics;
   $("#characteristic-cost").textContent =
     `${totalCharacteristicCost(c)} characteristic & movement points`;
-  const statCards = rows => rows.map(([k, v]) => `<div class="stat read"><span>${k}</span><strong>${v}</strong></div>`).join("");
+  const statCards = (rows,rolls=false) => rows.map(([k, v]) => rolls ? `<button type="button" class="stat read rollable-stat" data-sheet-roll="${String(v).replace("-","")}" data-roll-label="${k}"><span>${k}</span><strong>${v}</strong></button>` : `<div class="stat read"><span>${k}</span><strong>${v}</strong></div>`).join("");
   $("#combat-values").innerHTML = statCards([
     ["OCV", combatValue(c.DEX)],
     ["DCV", combatValue(c.DEX)],
@@ -507,8 +514,9 @@ function renderDerived() {
   $("#characteristic-rolls").innerHTML = statCards([
     ["STR", roll(c.STR)], ["DEX", roll(c.DEX)], ["INT", roll(c.INT)],
     ["EGO", roll(c.EGO)], ["PRE", roll(c.PRE)], ["PER", roll(c.INT)],
-  ]);
+  ],true);
   renderDefenseValues();
+  document.querySelectorAll("[data-sheet-roll]").forEach(node=>node.addEventListener("click",()=>rollAgainstTarget(Number(node.dataset.sheetRoll),node.dataset.rollLabel)));
 }
 function updateStat(event) {
   markHdcDirty();
@@ -637,7 +645,11 @@ function openEntryDetails(section, id) {
   $("#detail-category").textContent = sectionLabels()[section] || section;
   $("#detail-name").textContent = entry.name || entry.alias || "Unnamed entry";
   $("#detail-points").textContent = String(entryPointCost(section, entry));
-  $("#detail-roll").textContent = entryRoll4e(entry);
+  const detailRoll=entryRoll4e(entry),detailTarget=entry.mechanics?.roll;
+  $("#detail-roll").textContent = detailRoll;
+  $("#detail-roll-card").disabled=!Number.isFinite(detailTarget);
+  $("#detail-roll-card").dataset.target=Number.isFinite(detailTarget)?String(detailTarget):"";
+  $("#detail-roll-card").dataset.label=entry.name||entry.alias||"Ability";
   $("#detail-definition").textContent = entryDefinition4e(section, entry);
   $("#detail-reference").textContent = entryReference4e(section, entry);
   $("#detail-mechanics").textContent = entryMechanicsSummary(section, entry) || "No additional mechanics recorded.";
@@ -1415,7 +1427,7 @@ $("#delete-character").addEventListener("click", () => {
   if (
     !current ||
     !confirm(
-      `Delete ${current.name} from this device? Export or back up first if needed.`,
+      `Are you sure you want to delete ${current.name} from this device? This cannot be undone. Export or back up first if needed.`,
     )
   )
     return;
@@ -1549,24 +1561,9 @@ $("#reset-resources").addEventListener("click", () => {
   refreshResources();
   toast("Resources reset");
 });
-document.querySelectorAll("[data-roll]").forEach((button) =>
-  button.addEventListener("click", () => {
-    const type = button.dataset.roll;
-    const result =
-      type === "3d6"
-        ? roll3d6()
-        : type === "normal"
-          ? rollNormalDamage()
-          : rollKillingDamage();
-    $("#roll-result").innerHTML =
-      type === "3d6"
-        ? `<strong>${result.total}</strong><span>${result.dice.join(" + ")}</span>`
-        : `<strong>${result.stun} STUN &middot; ${result.body} BODY</strong><span>${result.dice.join(" + ")}${result.multiplier ? ` &middot; &times;${result.multiplier}` : ""}</span>`;
-  }),
-);
-$("#dice-overlay-button").addEventListener("click", () => $("#dice-dialog").showModal());
-$("#close-dice").addEventListener("click", () => $("#dice-dialog").close());
-document.querySelectorAll("[data-nav]").forEach((button) =>
+const diceTray=createDiceTray4e({getCharacter:()=>current});
+const {rollAgainstTarget,rollPowerAttack,rollPowerDamage}=diceTray;
+diceTray.bind();document.querySelectorAll("[data-nav]").forEach((button) =>
   button.addEventListener("click", () => {
     if (button.dataset.nav === "sheet-view" && !current) {
       toast("Choose or create a character first");

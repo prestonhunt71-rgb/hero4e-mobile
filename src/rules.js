@@ -18,6 +18,23 @@ export function normalizeCharacter(character) {
 export function totalCharacteristicCost(c){const bases=figured(c),movement=movementBases(c);const primary=characteristicCost(c);const figuredCost=(c.PD-bases.PD)+(c.ED-bases.ED)+(c.SPD-(1+c.DEX/10))*10+(c.REC-bases.REC)*2+(c.END-bases.END)*.5+(c.STUN-bases.STUN);const movementCost=(c.RUNNING-movement.RUNNING)*2+(c.SWIMMING-movement.SWIMMING);return primary+figuredCost+movementCost;}
 export function characteristicCost(characteristics) { return primaryKeys.reduce((sum,key)=>sum+(characteristics[key]-primaryDefinitions[key][0])*primaryDefinitions[key][1],0); }
 export const combatValue = (value) => roundFavor(Number(value)/3);
-export function roll3d6(random=Math.random) { const dice=Array.from({length:3},()=>1+Math.floor(random()*6)); return {dice,total:dice.reduce((a,b)=>a+b,0)}; }
-export function rollNormalDamage(count=6, random=Math.random) { const dice=Array.from({length:count},()=>1+Math.floor(random()*6)); return {dice,stun:dice.reduce((a,b)=>a+b,0),body:dice.reduce((sum,die)=>sum+(die===1?0:die===6?2:1),0)}; }
-export function rollKillingDamage(count=2, random=Math.random) { const dice=Array.from({length:count},()=>1+Math.floor(random()*6)); const body=dice.reduce((a,b)=>a+b,0); const multiplier=Math.max(1,Math.floor(random()*6)); return {dice,body,multiplier,stun:body*multiplier}; }
+const d6 = random => 1 + Math.floor(random() * 6);
+const normalBody = die => die === 1 ? 0 : die === 6 ? 2 : 1;
+export function rollHeroDice({count=3,half=false,mode="check",bodyModifier=0,multiplierModifier=0}={},random=Math.random) {
+  const dice=Array.from({length:Math.max(0,Math.floor(Number(count)||0))},()=>d6(random));
+  const halfDie=half?Math.ceil(d6(random)/2):null;
+  const rawTotal=dice.reduce((a,b)=>a+b,0)+(halfDie||0);
+  if(mode==="check")return {mode,dice,halfDie,total:rawTotal};
+  if(mode==="normal"||mode==="mental"){
+    const stun=rawTotal,body=dice.reduce((sum,die)=>sum+normalBody(die),0)+(halfDie==null?0:halfDie===1?0:1);
+    return {mode,dice,halfDie,stun,...(mode==="normal"?{body}:{})};
+  }
+  if(mode==="killing"){
+    const body=Math.max(0,rawTotal+Number(bodyModifier||0)),multiplier=Math.max(1,d6(random)-1+Number(multiplierModifier||0));
+    return {mode,dice,halfDie,body,multiplier,stun:body*multiplier};
+  }
+  throw new Error("Unknown HERO dice mode");
+}
+export function roll3d6(random=Math.random) { const result=rollHeroDice({count:3},random); return {dice:result.dice,total:result.total}; }
+export function rollNormalDamage(count=6, random=Math.random) { const result=rollHeroDice({count,mode:"normal"},random); return {dice:result.dice,stun:result.stun,body:result.body}; }
+export function rollKillingDamage(count=2, random=Math.random) { const result=rollHeroDice({count,mode:"killing"},random); return {dice:result.dice,body:result.body,multiplier:result.multiplier,stun:result.stun}; }

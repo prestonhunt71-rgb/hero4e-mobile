@@ -1066,3 +1066,28 @@ main:has(#sheet-view.active) + .bottom-nav .bottom-save { display: block; }
 .dice-dialog .dice-controls strong,.dice-dialog .dice-controls span { display:block; }
 .dice-dialog .dice-controls strong { font-size:1.05rem; }
 .dice-dialog .dice-controls span { color:var(--muted); font-size:.67rem; margin-top:4px; }
+.entry-list { grid-template-columns:minmax(0,1fr) auto; align-items:stretch; }
+.entry-list .entry { grid-column:1; }
+.entry-list:not(:has(.entry-actions)) { grid-template-columns:1fr; }
+.entry-actions { grid-column:2; display:grid; gap:5px; }
+.entry-roll { width:100%; min-width:76px; padding:7px; color:#17130a; background:var(--yellow); }
+.rollable-stat { width:100%; cursor:pointer; }
+.rollable-stat:after { content:"ROLL"; display:block; margin-top:4px; color:#8b291f; font-size:.55rem; font-weight:900; }
+.detail-roll-card { width:100%; padding:8px; background:#091728; color:var(--text); text-align:left; }
+.detail-roll-card span,.detail-roll-card strong { display:block; }
+.detail-roll-card:disabled { opacity:.65; }
+.dice-count-control { display:grid; grid-template-columns:54px 1fr 54px; align-items:center; gap:8px; margin:4px 0 12px; }
+.dice-count-control strong { text-align:center; font:900 2rem var(--display); }
+.dice-count-control button { font-size:1.6rem; }
+.dice-half { display:flex; align-items:center; justify-content:center; gap:8px; padding:7px; background:#09131c; border:2px solid #020507; }
+.dice-half input,.dice-modes input { width:22px; height:22px; min-height:0; }
+.dice-modes { display:grid; gap:8px; border:0; padding:12px 0; margin:0; }
+.dice-modes legend { color:var(--yellow); font-weight:900; }
+.dice-modes label { display:flex; align-items:center; gap:9px; padding:8px 10px; background:#1a2934; border:2px solid #05080b; }
+.killing-adjustments { display:grid; gap:8px; margin-bottom:12px; }
+.killing-adjustments > div { display:grid; grid-template-columns:1fr 44px 48px 44px; align-items:center; gap:5px; }
+.killing-adjustments span { font-size:.72rem; }
+.killing-adjustments strong { text-align:center; }
+.killing-adjustments button { padding:4px; }
+.dice-roll-button { width:100%; }
+@media(max-width:420px){.entry-list{grid-template-columns:minmax(0,1fr) 70px}.entry-roll{min-width:0}.killing-adjustments>div{grid-template-columns:1fr 42px 42px 42px}}
