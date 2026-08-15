@@ -20,19 +20,6 @@
     <title>HERO4E Mobile</title>
   </head>
   <body>
-    <header class="app-header">
-      <div class="brand-lockup">
-        <span class="brand-burst">H!</span>
-        <div>
-          <span class="eyebrow">HERO System</span>
-          <h1>Fourth Edition</h1>
-        </div>
-      </div>
-      <div class="header-actions">
-        <button id="refresh-button" class="quiet">Refresh app</button
-        ><button id="install-button" class="quiet" hidden>Install</button>
-      </div>
-    </header>
     <main>
       <section id="library-view" class="view active">
         <div class="hero-card">
@@ -110,12 +97,9 @@
             <small id="player-name"></small>
           </button>
         </div>
+        <div id="edit-mode-banner" class="edit-mode-banner" hidden>EDIT MODE · Dice and Combat are locked until you save.</div>
         <nav class="sheet-jump" aria-label="Character sheet sections">
-          <button data-jump=".characteristics-panel">Characteristics</button
-          ><button data-jump="#abilities-panel">Skills &amp; Powers</button
-          ><button data-jump=".combat-panel">Combat</button
-          ><button data-jump="#profile-panel">Background</button
-          ><button data-jump="#options-panel">Options</button>
+          <button data-jump=".play-panel">Play</button><button data-jump=".characteristics-panel">Characteristics</button><button data-jump="#abilities-panel">Skills &amp; Powers</button><button data-jump=".combat-panel">Combat</button><button data-jump="#profile-panel">Background</button><button data-jump="#options-panel">Options</button>
         </nav>
         <section class="panel" id="profile-panel">
           <div class="panel-title">
@@ -135,6 +119,7 @@
           >
         </section>
         <div class="resource-row" id="resources"></div>
+        <section class="panel play-speed-panel"><div class="panel-title"><h3>Speed Chart</h3><span id="play-combat-status"></span></div><div id="play-speed-chart" class="speed-chart"></div></section>
         <section class="panel characteristics-panel">
           <div class="panel-title">
             <h3>Characteristics</h3>
@@ -245,8 +230,9 @@
         </section>
         <section class="panel" id="options-panel">
           <div class="panel-title"><h3>Options</h3></div>
+          <button id="edit-character" class="primary edit-character-button" type="button">Edit Character</button>
+          <p id="mode-status" class="mode-status">Play mode · Character fields are locked.</p>
           <div class="options-actions">
-            <button id="edit-identity-option">Identity &amp; Character Image</button>
             <button id="export-json" class="quiet">Export HERO4E</button>
             <button id="export-foundry" class="quiet">Export Foundry</button>
             <button id="export-hdc" class="quiet" hidden>Export HDC</button>
@@ -296,7 +282,7 @@
       </fieldset>
       <div id="killing-adjustments" class="killing-adjustments">
         <div><span>BODY modifier</span><button id="body-mod-minus" type="button" aria-label="Subtract one BODY">&minus;</button><strong id="body-mod-display">0</strong><button id="body-mod-plus" type="button" aria-label="Add one BODY">&plus;</button></div>
-        <div><span>STUN Multiplier modifier</span><button id="multiplier-mod-minus" type="button" aria-label="Subtract one from STUN Multiplier">&minus;</button><strong id="multiplier-mod-display">0</strong><button id="multiplier-mod-plus" type="button" aria-label="Add one to STUN Multiplier">&plus;</button></div>
+        <div><span>STUN Multiplier <b id="multiplier-formula">1d6−1</b><small>Modifier</small></span><button id="multiplier-mod-minus" type="button" aria-label="Subtract one from STUN Multiplier">&minus;</button><strong id="multiplier-mod-display">0</strong><button id="multiplier-mod-plus" type="button" aria-label="Add one to STUN Multiplier">&plus;</button></div>
       </div>
       <button id="roll-dice-tray" class="primary dice-roll-button" type="button">Roll 3d6</button>
       <div id="roll-result" class="roll-result" role="status" aria-live="polite">Choose a roll.</div>

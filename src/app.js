@@ -87,8 +87,8 @@ import {
   presenceAttack4e,
 } from "./combat.js";
 let current = null;
-let installPrompt = null;
-let currentSheetPage = "stats";
+let currentSheetPage = "play";
+let editMode = false, isDraft = false, editSnapshot = null;
 let selectedEntry = null;
 const $ = (selector) => document.querySelector(selector);
 function show(view) {
@@ -109,17 +109,13 @@ function toast(message) {
 }
 function setupSheetPages() {
   const groups = {
-    stats: [$("#resources"), $(".characteristics-panel"), $("#movement")?.closest(".panel"), $("#combat-values")?.closest(".panel"), $(".characteristics-rolls-panel"), $(".defenses-panel")],
-    abilities: [$("#abilities-panel")],
-    combat: [$(".combat-panel")],
-    profile: [$("#profile-panel"), $("#point-grid")?.closest(".panel")],
-    options: [$("#options-panel")],
+    play: [$("#resources"), $("#movement")?.closest(".panel"), $("#combat-values")?.closest(".panel"), $(".characteristics-rolls-panel"), $(".defenses-panel"), $(".play-speed-panel")],
+    characteristics: [$(".characteristics-panel")],
+    abilities: [$("#abilities-panel")], combat: [$(".combat-panel")],
+    profile: [$("#profile-panel"), $("#point-grid")?.closest(".panel")], options: [$("#options-panel")],
   };
-  for (const [page, nodes] of Object.entries(groups)) for (const node of nodes.filter(Boolean)) {
-    node.classList.add("sheet-section-page");
-    node.dataset.sheetPage = page;
-  }
-  const pageOrder = ["stats", "abilities", "combat", "profile", "options"];
+  for (const [page, nodes] of Object.entries(groups)) for (const node of nodes.filter(Boolean)) { node.classList.add("sheet-section-page"); node.dataset.sheetPage = page; }
+  const pageOrder = ["play", "characteristics", "abilities", "combat", "profile", "options"];
   document.querySelectorAll("[data-jump]").forEach((button, index) => button.dataset.page = pageOrder[index]);
 }
 function showSheetPage(page) {
@@ -128,6 +124,22 @@ function showSheetPage(page) {
   document.querySelectorAll("[data-jump]").forEach(button => button.classList.toggle("active", button.dataset.page === page));
   window.scrollTo({top: 0, behavior: "auto"});
 }
+function setupIdentityOptions(){
+  const form=$("#identity-form"),dialog=$("#identity-dialog");
+  form.classList.add("options-identity"); $("#mode-status").after(form); dialog.remove();
+  $("#cancel-identity").hidden=true; form.querySelector("h3").textContent="Identity & Character Image";
+}
+function setEditMode(value){
+  editMode=Boolean(value); document.body.classList.toggle("edit-mode",editMode);
+  $("#edit-mode-banner").hidden=!editMode; $("#mode-status").textContent=editMode?"Edit mode · Make changes, then Save Character to return to Play mode.":"Play mode · Character fields are locked.";
+  $("#edit-character").hidden=editMode; $("#save-button").hidden=!editMode; $("#dice-overlay-button").disabled=editMode; $(".combat-panel").inert=editMode;
+  const combatTab=document.querySelector('[data-page="combat"]'); if(combatTab)combatTab.disabled=editMode;
+  document.querySelectorAll("[data-stat], #identity-form input, #identity-form textarea, #identity-form button").forEach(node=>node.disabled=!editMode);
+  document.querySelectorAll("[data-sheet-roll], .entry-roll").forEach(node=>node.disabled=editMode);
+  $("#profile-button").hidden=!editMode; $("#add-entry").hidden=!editMode; $("#edit-entry-detail").hidden=!editMode;
+}
+function beginEdit(){ if(!current||editMode)return; editSnapshot=structuredClone(current); setEditMode(true); renderSheet(); showSheetPage("options"); }
+function characterPointTotal(character){ const p=character.points||{},earned=(character.sections?.disadvantages||[]).reduce((sum,item)=>sum+(Number(item.mechanics?.cost)||0),0); return Number(p.base||0)+Math.min(earned,Number(p.disadvantages||0)||earned)+Number(p.experience||0); }
 function renderLibrary() {
   const query = $("#character-search")?.value.trim().toLowerCase() || "",
     stored = loadCharacters(),
@@ -148,8 +160,8 @@ function renderLibrary() {
   $("#character-list").innerHTML = all.length
     ? all
         .map(
-          (c, index) =>
-            `<button class="character-card" data-id="${c.id}"><span class="avatar${c.portrait?.dataUrl ? " has-art" : ""}" ${c.portrait?.dataUrl ? 'data-view-art="true" title="View full-size character art" aria-label="View full-size character art"' : ""}>${c.portrait?.dataUrl ? `<img src="${c.portrait.dataUrl}" alt="" /><span class="art-badge" aria-hidden="true">ART</span>` : escapeHtml(c.name.slice(0, 1).toUpperCase())}</span><span><strong>${c.name}</strong><small>${c.source?.type === "hdc" ? "Hero Designer import" : "HERO4E original"} · SPD ${c.characteristics.SPD}${c.profile?.alternateIdentities ? ` · ${escapeHtml(c.profile.alternateIdentities)}` : ""}</small></span><span class="chevron">${String(index + 1).padStart(2, "0")} ›</span></button>`,
+          (c) =>
+            `<button class="character-card" data-id="${c.id}"><span class="avatar" ${c.portrait?.dataUrl ? 'data-view-art="true" title="View full-size character art" aria-label="View full-size character art"' : ""}>${c.portrait?.dataUrl ? `<img src="${c.portrait.dataUrl}" alt="" />` : escapeHtml((c.name||"H").slice(0, 1).toUpperCase())}</span><span><strong>${escapeHtml(c.name)}</strong><small>${escapeHtml(c.profile?.alternateIdentities||"No secret identity")}</small><small>${escapeHtml(c.profile?.campaignName||"No campaign")} · ${characterPointTotal(c)} points</small></span><span class="chevron">›</span></button>`,
         )
         .join("")
     : `<div class="empty"><strong>${stored.length ? "No matching heroes" : "No characters yet"}</strong><p>${stored.length ? "Try a different name or identity." : "Your roster is stored locally on this device."}</p></div>`;
@@ -160,7 +172,7 @@ function renderLibrary() {
     );
 }
 function inputStat(key, value) {
-  return `<label class="stat"><span>${key}</span><input inputmode="numeric" data-stat="${key}" value="${value}" aria-label="${key}" /></label>`;
+  return `<label class="stat"><span>${key}</span><input inputmode="numeric" data-stat="${key}" value="${value}" aria-label="${key}" ${editMode ? "" : "disabled"} /></label>`;
 }
 function escapeHtml(value) {
   const node = document.createElement("span");
@@ -227,7 +239,7 @@ function renderEntries() {
     ([, entries]) => entries.length,
   );
   const total = groups.reduce((sum, [, entries]) => sum + entries.length, 0);
-  $("#abilities-panel").hidden = !total && Boolean(current.preservedHdc);
+  $("#abilities-panel").hidden = !total && Boolean(current.preservedHdc) && !editMode;
   $("#ability-count").textContent = total
     ? `${total} ${current.preservedHdc ? "imported " : ""}items`
     : "No Skills, Perks, Talents, Martial Arts, Powers, Disadvantages, or Equipment yet";
@@ -246,14 +258,14 @@ function renderEntries() {
       actions.push({label:"Attack Roll",aria:`Roll ${entry.name||"Power"} attack`,run:()=>rollPowerAttack(entry)});
       if(powerProfile.damageMode)actions.push({label:"Damage",aria:`Roll ${entry.name||"Power"} damage`,run:()=>rollPowerDamage(entry)});
     }
-    if(actions.length){
+    if(actions.length && !editMode){
       const host=document.createElement("div");host.className="entry-actions";
       for(const action of actions){const button=document.createElement("button");button.type="button";button.className="entry-roll";button.textContent=action.label;button.setAttribute("aria-label",action.aria);button.addEventListener("click",action.run);host.append(button);}
       node.insertAdjacentElement("afterend",host);
     }
   });
   $("#export-hdc").hidden = false;
-  $("#add-entry").hidden = Boolean(current.preservedHdc);
+  $("#add-entry").hidden = !editMode;
 }
 function renderProfile() {
   syncFrameworkCosts();
@@ -312,6 +324,7 @@ function renderProfile() {
       knownAbilities +
       knownMartial,
     balance = available - knownSpent;
+  $("#profile-button").hidden = !editMode;
   $("#point-grid").innerHTML = [
     ["Base Character Points", points.base],
     ["Maximum Disadvantage Points", points.disadvantages],
@@ -398,12 +411,8 @@ function renderCombat() {
   renderDamageDefenses();
   $("#combat-status").textContent =
     `Turn ${turn} · Segment ${segment} · ${hasPhase(spd, segment) ? "Your Phase" : "No Phase"}`;
-  $("#speed-chart").innerHTML = Array.from({ length: 12 }, (_, i) => i + 1)
-    .map(
-      (value) =>
-        `<button data-segment="${value}" class="${value === segment ? "current " : ""}${phases.includes(value) ? "phase" : ""}" aria-label="Segment ${value}${phases.includes(value) ? ", Phase" : ""}"><span>${value}</span>${phases.includes(value) ? "<small>Phase</small>" : ""}</button>`,
-    )
-    .join("");
+  const speedMarkup = Array.from({ length: 12 }, (_, i) => i + 1).map((value) => `<button data-segment="${value}" class="${value === segment ? "current " : ""}${phases.includes(value) ? "phase" : ""}" aria-label="Segment ${value}${phases.includes(value) ? ", Phase" : ""}"><span>${value}</span>${phases.includes(value) ? "<small>Phase</small>" : ""}</button>`).join("");
+  $("#speed-chart").innerHTML = speedMarkup; $("#play-speed-chart").innerHTML = speedMarkup; $("#play-combat-status").textContent = `SPD ${spd} · Phases ${phases.join(", ")}`;
   const labels = phase.log.map((id) => ACTION_TIMING_4E[id]?.label || id),lastAction=ACTION_TIMING_4E[phase.log.at(-1)],maneuverDetails=lastAction?.effect?[`OCV ${lastAction.ocv}`,`DCV ${lastAction.dcv}`,lastAction.effect].join(" · "):"";
   $("#phase-status").textContent = (phase.held
     ? "Held Action saved"
@@ -470,9 +479,8 @@ function renderSheet() {
   if (!current) return;
   $("#character-name").textContent = current.name;
   renderPortraits();
-  $("#player-name").textContent = current.playerName
-    ? `Player: ${current.playerName}`
-    : "Tap to edit identity";
+  $("#player-name").textContent = current.playerName ? `Player: ${current.playerName}` : "";
+  $("#identity-name").value=current.name; $("#identity-player").value=current.playerName||"";
   $("#characteristics").innerHTML = [...primaryKeys, ...figuredKeys]
     .map((key) => inputStat(key, current.characteristics[key]))
     .join("");
@@ -482,7 +490,7 @@ function renderSheet() {
   $("#resources").innerHTML = ["BODY", "STUN", "END"]
     .map(
       (key) =>
-        `<label><span>${key}</span><input inputmode="numeric" data-current="${key}" value="${current.current[key]}" /><small>/ ${current.characteristics[key]}</small></label>`,
+        `<label><span>${key}</span><input inputmode="numeric" data-current="${key}" value="${current.current[key]}" ${editMode ? "" : "disabled"} /><small>/ ${current.characteristics[key]}</small></label>`,
     )
     .join("");
   renderDerived();
@@ -494,11 +502,8 @@ function renderSheet() {
   document
     .querySelectorAll("[data-stat]")
     .forEach((node) => node.addEventListener("change", updateStat));
-  document.querySelectorAll("[data-current]").forEach((node) =>
-    node.addEventListener("change", () => {
-      current.current[node.dataset.current] = Number(node.value);
-    }),
-  );
+  document.querySelectorAll("[data-current]").forEach((node) => node.addEventListener("change", () => { current.current[node.dataset.current] = Number(node.value); }));
+  setEditMode(editMode);
 }
 function renderDerived() {
   const c = current.characteristics;
@@ -543,21 +548,8 @@ function updateStat(event) {
     current.characteristics[key] = previous;
   renderDerived();
 }
-function openCharacter(id) {
-  currentSheetPage = "stats";
-  current = normalizeCharacter(getCharacter(id));
-  saveCharacter(current);
-  renderSheet();
-  show("sheet-view");
-}
-function createCharacter() {
-  currentSheetPage = "stats";
-  current = normalizeCharacter({ name: "New Hero" });
-  saveCharacter(current);
-  renderLibrary();
-  renderSheet();
-  show("sheet-view");
-}
+function openCharacter(id) { currentSheetPage="play"; current=normalizeCharacter(getCharacter(id)); isDraft=false; editSnapshot=null; setEditMode(false); renderSheet(); show("sheet-view"); }
+function createCharacter() { currentSheetPage="options"; current=normalizeCharacter({name:"New Hero"}); isDraft=true; editSnapshot=null; setEditMode(true); renderSheet(); show("sheet-view"); showSheetPage("options"); toast("New character is not saved yet"); }
 function backupRoster() {
   const data = {
     format: "hero4e-mobile-roster",
@@ -1300,6 +1292,7 @@ $("#close-art").addEventListener("click",()=>$("#art-dialog").close());
 $("#art-zoom-in").addEventListener("click",()=>{artZoom=Math.min(4,artZoom+.25);updateArtZoom();});
 $("#art-zoom-out").addEventListener("click",()=>{artZoom=Math.max(.5,artZoom-.25);updateArtZoom();});
 $("#art-zoom-reset").addEventListener("click",()=>{artZoom=1;updateArtZoom();});
+$("#edit-character").addEventListener("click",beginEdit);
 $("#profile-button").addEventListener("click", () => {
   for (const key of [
     "alternateIdentities",
@@ -1351,11 +1344,10 @@ $("#portrait-input").addEventListener("change", async (event) => {
     status.textContent = "Preparing " + file.name + "…";
     toast("Preparing character art...");
     current.portrait = await preparePortrait(file);
-    saveCharacter(current);
     renderPortraits();
     status.textContent =
       "Portrait saved (" + Math.round(current.portrait.bytes / 1024) + " KB).";
-    toast("Portrait saved on this device");
+    toast("Portrait ready — Save Character to finish");
   } catch (error) {
     console.error(error);
     status.textContent = error.message;
@@ -1369,12 +1361,7 @@ $("#remove-portrait").addEventListener("click", () => {
   renderPortraits();
   toast("Portrait removed — save the character");
 });
-$("#edit-identity-option").addEventListener("click", () => $("#identity-button").click());
-$("#identity-button").addEventListener("click", () => {
-  $("#identity-name").value = current.name;
-  $("#identity-player").value = current.playerName || "";
-  $("#identity-dialog").showModal();
-});
+$("#identity-button").addEventListener("click",()=>{if(editMode)showSheetPage("options");});
 $("#identity-form").addEventListener("submit", (event) => {
   event.preventDefault();
   const nextName = $("#identity-name").value.trim() || current.name,
@@ -1383,15 +1370,10 @@ $("#identity-form").addEventListener("submit", (event) => {
     markHdcDirty();
   current.name = nextName;
   current.playerName = nextPlayer;
-  saveCharacter(current);
-  $("#identity-dialog").close();
   renderSheet();
-  renderLibrary();
-  toast("Identity and portrait saved");
+  toast("Identity updated — Save Character to finish");
 });
-$("#cancel-identity").addEventListener("click", () =>
-  $("#identity-dialog").close(),
-);
+
 $("#backup-roster").addEventListener("click", backupRoster);
 $("#roster-input").addEventListener("change", async (event) => {
   try {
@@ -1440,21 +1422,14 @@ $("#delete-character").addEventListener("click", () => {
 $("#new-character").addEventListener("click", createCharacter);
 $("#new-character-shortcut").addEventListener("click", createCharacter);
 $("#character-search").addEventListener("input", renderLibrary);
-$("#back-button").addEventListener("click", () => {
-  renderLibrary();
-  show("library-view");
-});
-$("#save-button").addEventListener("click", () => {
-  current.updatedAt = new Date().toISOString();
-  saveCharacter(current);
-  toast("Character saved on this device");
-  renderLibrary();
-});
+$("#back-button").addEventListener("click",()=>{ if(editMode){current=isDraft?null:normalizeCharacter(editSnapshot);isDraft=false;editSnapshot=null;setEditMode(false);} renderLibrary();show("library-view"); });
+$("#save-button").addEventListener("click",()=>{ current.name=$("#identity-name").value.trim()||current.name;current.playerName=$("#identity-player").value.trim();current.updatedAt=new Date().toISOString();saveCharacter(current);isDraft=false;editSnapshot=null;setEditMode(false);currentSheetPage="play";renderSheet();showSheetPage("play");renderLibrary();toast("Character saved · Play mode"); });
 $("#json-input").addEventListener("change", async (event) => {
   try {
     const file = event.target.files[0];
     if (!file) return;
     current = importCharacterJson(await file.text());
+    isDraft=false;editSnapshot=null;setEditMode(false);currentSheetPage="play";
     saveCharacter(current);
     renderLibrary();
     renderSheet();
@@ -1471,6 +1446,7 @@ $("#hdc-input").addEventListener("change", async (event) => {
     const file = event.target.files[0];
     if (!file) return;
     current = importHdc(await file.text());
+    isDraft=false;editSnapshot=null;setEditMode(false);currentSheetPage="play";
     saveCharacter(current);
     renderLibrary();
     renderSheet();
@@ -1494,6 +1470,7 @@ $("#sample-character").addEventListener("click", async (event) => {
     if (!response.ok)
       throw new Error(`Sample download failed (${response.status})`);
     current = importHdc(await response.text());
+    isDraft=false;editSnapshot=null;setEditMode(false);currentSheetPage="play";
     saveCharacter(current);
     renderLibrary();
     renderSheet();
@@ -1577,43 +1554,11 @@ document.querySelectorAll("[data-jump]").forEach((button) =>
     showSheetPage(button.dataset.page);
   }),
 );
-window.addEventListener("beforeinstallprompt", (event) => {
-  event.preventDefault();
-  installPrompt = event;
-  $("#install-button").hidden = false;
-});
-$("#install-button").addEventListener("click", async () => {
-  await installPrompt?.prompt();
-  installPrompt = null;
-  $("#install-button").hidden = true;
-});
-$("#refresh-button").addEventListener("click", async (event) => {
-  const button = event.currentTarget;
-  button.disabled = true;
-  button.textContent = "Refreshing...";
-  toast("Updating HERO4E Mobile...");
-  try {
-    const registrations =
-      (await navigator.serviceWorker?.getRegistrations?.()) || [];
-    await Promise.all(
-      registrations.map((registration) => registration.update()),
-    );
-    const cacheKeys = (await caches?.keys?.()) || [];
-    await Promise.all(
-      cacheKeys
-        .filter((key) => key.startsWith("hero4e-mobile-"))
-        .map((key) => caches.delete(key)),
-    );
-    const url = new URL(location.href);
-    url.searchParams.set("refresh", Date.now());
-    location.replace(url);
-  } catch (error) {
-    console.error(error);
-    button.disabled = false;
-    button.textContent = "Refresh app";
-    toast(`Refresh failed: ${error.message}`);
-  }
-});
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js");
+if ("serviceWorker" in navigator) {
+  let reloading=false;
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{if(!reloading){reloading=true;location.reload();}});
+  navigator.serviceWorker.register("./sw.js").then(registration=>registration.update()).catch(console.error);
+}
+setupIdentityOptions();
 setupSheetPages();
 renderLibrary();
