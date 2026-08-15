@@ -109,19 +109,18 @@ function toast(message) {
   setTimeout(() => node.classList.remove("show"), 2200);
 }
 function setupSheetPages() {
-  const profile = $("#profile-panel"), characteristics = $(".characteristics-panel"), combat = $(".combat-panel"), dice = $(".dice-controls")?.closest(".panel");
   const groups = {
-    stats: [$("#resources"), characteristics, characteristics?.nextElementSibling, characteristics?.nextElementSibling?.nextElementSibling],
+    stats: [$("#resources"), $(".characteristics-panel"), $("#movement")?.closest(".panel"), $("#combat-values")?.closest(".panel"), $(".characteristics-rolls-panel"), $(".defenses-panel")],
     abilities: [$("#abilities-panel")],
-    combat: [combat],
-    dice: [dice],
-    profile: [profile, profile?.nextElementSibling],
+    combat: [$(".combat-panel")],
+    profile: [$("#profile-panel"), $("#point-grid")?.closest(".panel")],
+    options: [$("#options-panel")],
   };
   for (const [page, nodes] of Object.entries(groups)) for (const node of nodes.filter(Boolean)) {
     node.classList.add("sheet-section-page");
     node.dataset.sheetPage = page;
   }
-  const pageOrder = ["stats", "abilities", "combat", "dice", "profile"];
+  const pageOrder = ["stats", "abilities", "combat", "profile", "options"];
   document.querySelectorAll("[data-jump]").forEach((button, index) => button.dataset.page = pageOrder[index]);
 }
 function showSheetPage(page) {
@@ -236,7 +235,7 @@ function renderEntries() {
   $("#ability-sections").innerHTML = groups
     .map(
       ([key, entries]) =>
-        `<details ${key === "skills" || key === "powers" ? "open" : ""}><summary>${labels[key] || key} <span>${entries.length}</span></summary><div class="entry-list">${entries.map((entry) => `<button class="entry" data-entry-section="${key}" data-entry-id="${escapeHtml(entry.id)}"><strong>${escapeHtml(entry.name || entry.alias || "Unnamed " + (labels[key] || "item"))}</strong><small>${escapeHtml([entry.alias !== entry.name ? entry.alias : "", entry.option, entry.mechanics ? entryMechanicsSummary(key, entry) : ""].filter(Boolean).join(" · "))}</small></button>`).join("")}</div></details>`,
+        `<details><summary>${labels[key] || key} <span>${entries.length}</span></summary><div class="entry-list">${entries.map((entry) => `<button class="entry" data-entry-section="${key}" data-entry-id="${escapeHtml(entry.id)}"><strong>${escapeHtml(entry.name || entry.alias || "Unnamed " + (labels[key] || "item"))}</strong><small>${escapeHtml([entry.alias !== entry.name ? entry.alias : "", entry.option, entry.mechanics ? entryMechanicsSummary(key, entry) : ""].filter(Boolean).join(" · "))}</small></button>`).join("")}</div></details>`,
     )
     .join("");
   document
@@ -350,6 +349,23 @@ function characterDefenses() {
       resistant: rED,
     },
   };
+}
+function renderDefenseValues() {
+  const defenses = characterDefenses(), powers = current.sections?.powers || [];
+  const amount = key => powers.filter(power => power.mechanics?.key === key).reduce((sum, power) => sum + Number(power.mechanics?.levels || 0), 0);
+  const rows = [
+    ["Physical Defense", defenses.physical.total, defenses.physical.resistant],
+    ["Energy Defense", defenses.energy.total, defenses.energy.resistant],
+  ];
+  const mental = amount("mentalDefense"), flash = amount("flashDefense"), power = amount("powerDefense");
+  if (mental) rows.push(["Mental Defense", mental, null]);
+  if (flash) rows.push(["Flash Defense", flash, null]);
+  if (power) rows.push(["Power Defense", power, null]);
+  for (const entry of powers.filter(item => item.mechanics?.key === "damageReduction")) {
+    const resistant = entry.mechanics?.options?.resistant ? " · Resistant" : "";
+    rows.push(["Damage Reduction", `${entry.mechanics.levels}%${resistant}`, null]);
+  }
+  $("#defense-values").innerHTML = rows.map(([label,total,resistant]) => `<div class="defense-card"><span>${label}</span><strong>${total}</strong>${resistant == null ? "" : `<small>${resistant} Resistant</small>`}</div>`).join("");
 }
 function renderDamageDefenses() {
   const kind = $("#damage-defense-kind").value || "physical",
@@ -467,9 +483,7 @@ function renderSheet() {
   renderProfile();
   renderCombat();
   showSheetPage(currentSheetPage);
-  const notice = $("#import-notice");
-  notice.hidden = !current.warnings.length;
-  notice.textContent = current.warnings[0] || "";
+
   document
     .querySelectorAll("[data-stat]")
     .forEach((node) => node.addEventListener("change", updateStat));
@@ -483,18 +497,18 @@ function renderDerived() {
   const c = current.characteristics;
   $("#characteristic-cost").textContent =
     `${totalCharacteristicCost(c)} characteristic & movement points`;
-  $("#combat-values").innerHTML = [
+  const statCards = rows => rows.map(([k, v]) => `<div class="stat read"><span>${k}</span><strong>${v}</strong></div>`).join("");
+  $("#combat-values").innerHTML = statCards([
     ["OCV", combatValue(c.DEX)],
     ["DCV", combatValue(c.DEX)],
     ["ECV", combatValue(c.EGO)],
-    ["DEX roll", `${9 + Math.floor(c.DEX / 5 + 0.5)}-`],
-    ["EGO roll", `${9 + Math.floor(c.EGO / 5 + 0.5)}-`],
-  ]
-    .map(
-      ([k, v]) =>
-        `<div class="stat read"><span>${k}</span><strong>${v}</strong></div>`,
-    )
-    .join("");
+  ]);
+  const roll = value => `${9 + Math.floor(Number(value || 0) / 5 + 0.5)}-`;
+  $("#characteristic-rolls").innerHTML = statCards([
+    ["STR", roll(c.STR)], ["DEX", roll(c.DEX)], ["INT", roll(c.INT)],
+    ["EGO", roll(c.EGO)], ["PRE", roll(c.PRE)], ["PER", roll(c.INT)],
+  ]);
+  renderDefenseValues();
 }
 function updateStat(event) {
   markHdcDirty();
@@ -1343,6 +1357,7 @@ $("#remove-portrait").addEventListener("click", () => {
   renderPortraits();
   toast("Portrait removed — save the character");
 });
+$("#edit-identity-option").addEventListener("click", () => $("#identity-button").click());
 $("#identity-button").addEventListener("click", () => {
   $("#identity-name").value = current.name;
   $("#identity-player").value = current.playerName || "";
@@ -1549,6 +1564,8 @@ document.querySelectorAll("[data-roll]").forEach((button) =>
         : `<strong>${result.stun} STUN &middot; ${result.body} BODY</strong><span>${result.dice.join(" + ")}${result.multiplier ? ` &middot; &times;${result.multiplier}` : ""}</span>`;
   }),
 );
+$("#dice-overlay-button").addEventListener("click", () => $("#dice-dialog").showModal());
+$("#close-dice").addEventListener("click", () => $("#dice-dialog").close());
 document.querySelectorAll("[data-nav]").forEach((button) =>
   button.addEventListener("click", () => {
     if (button.dataset.nav === "sheet-view" && !current) {

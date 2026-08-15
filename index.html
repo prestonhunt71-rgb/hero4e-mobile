@@ -109,22 +109,13 @@
             <h2 id="character-name">Hero</h2>
             <small id="player-name"></small>
           </button>
-          <div class="sheet-actions">
-            <button id="delete-character" class="quiet danger-text">
-              Delete</button
-            ><button id="export-json" class="quiet">Export HERO4E</button
-            ><button id="export-foundry" class="quiet">Export Foundry</button
-            ><button id="export-hdc" class="quiet" hidden>Export HDC</button
-            ><button id="save-pdf" class="quiet">Save PDF</button><button id="print-character" class="quiet">Print</button><button id="save-button" class="quiet">Save</button>
-          </div>
         </div>
-        <div id="import-notice" class="notice" hidden></div>
         <nav class="sheet-jump" aria-label="Character sheet sections">
           <button data-jump=".characteristics-panel">Characteristics</button
           ><button data-jump="#abilities-panel">Skills &amp; Powers</button
           ><button data-jump=".combat-panel">Combat</button
-          ><button data-jump=".dice-controls">Dice</button
-          ><button data-jump="#profile-panel">Background</button>
+          ><button data-jump="#profile-panel">Background</button
+          ><button data-jump="#options-panel">Options</button>
         </nav>
         <section class="panel" id="profile-panel">
           <div class="panel-title">
@@ -161,6 +152,14 @@
         <section class="panel">
           <div class="panel-title"><h3>Combat values</h3></div>
           <div id="combat-values" class="stat-grid compact"></div>
+        </section>
+        <section class="panel characteristics-rolls-panel">
+          <div class="panel-title"><h3>Characteristic Rolls</h3></div>
+          <div id="characteristic-rolls" class="stat-grid compact"></div>
+        </section>
+        <section class="panel defenses-panel">
+          <div class="panel-title"><h3>Defenses</h3></div>
+          <div id="defense-values" class="defense-grid"></div>
         </section>
         <section class="panel" id="abilities-panel" hidden>
           <div class="panel-title">
@@ -244,18 +243,22 @@
             ><button id="reset-resources" class="quiet">Reset resources</button>
           </div>
         </section>
-        <section class="panel">
-          <div class="panel-title"><h3>Dice</h3></div>
-          <div class="dice-controls">
-            <button data-roll="3d6">3d6 roll</button
-            ><button data-roll="normal">Normal damage</button
-            ><button data-roll="killing">Killing damage</button>
+        <section class="panel" id="options-panel">
+          <div class="panel-title"><h3>Options</h3></div>
+          <div class="options-actions">
+            <button id="edit-identity-option">Identity &amp; Character Image</button>
+            <button id="export-json" class="quiet">Export HERO4E</button>
+            <button id="export-foundry" class="quiet">Export Foundry</button>
+            <button id="export-hdc" class="quiet" hidden>Export HDC</button>
+            <button id="save-pdf" class="quiet">Save PDF</button>
+            <button id="print-character" class="quiet">Print</button>
+            <button id="delete-character" class="quiet danger-text">Delete Character</button>
           </div>
-          <div id="roll-result" class="roll-result" role="status" aria-live="polite">Choose a roll.</div>
         </section>
       </section>
     </main>
     <nav class="bottom-nav" aria-label="Application">
+      <button id="save-button" class="bottom-save" type="button">Save Character</button>
       <button class="active" data-nav="library-view">
         <span class="nav-icon"
           ><svg viewBox="0 0 24 24" aria-hidden="true">
@@ -263,6 +266,10 @@
               d="M12 3 3 9l9 5 9-5-9-6Zm-7 9 7 4 7-4v5l-7 4-7-4v-5Z"
             /></svg></span
         >Characters
+      </button>
+      <button id="dice-overlay-button" type="button" aria-label="Open dice roller">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10l5 7-3 10H5L2 10l5-7Zm1.3 3L5.5 10l1.7 6h9.6l1.7-6-2.8-4H8.3ZM12 8.2a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Zm-3 4.5a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6Zm6 0a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6Z"/></svg></span>
+        Dice
       </button>
       <button data-nav="sheet-view">
         <span class="nav-icon"
@@ -273,6 +280,15 @@
         >Sheet
       </button>
     </nav>
+    <dialog id="dice-dialog" class="dice-dialog" aria-label="Roll Dice">
+      <div class="dice-dialog-head"><h3>Roll Dice</h3><button id="close-dice" type="button" aria-label="Close dice roller">&times;</button></div>
+      <div class="dice-controls">
+        <button data-roll="3d6"><strong>3d6</strong><span>Skill Roll</span></button>
+        <button data-roll="normal"><strong>Normal</strong><span>Damage</span></button>
+        <button data-roll="killing"><strong>Killing</strong><span>Damage</span></button>
+      </div>
+      <div id="roll-result" class="roll-result" role="status" aria-live="polite">Choose a roll.</div>
+    </dialog>
     <dialog id="art-dialog" class="art-dialog" aria-label="Full-size character art"><div class="art-toolbar"><strong id="art-title">Character art</strong><div><button id="art-zoom-out" type="button" aria-label="Zoom out">-</button><button id="art-zoom-reset" type="button">100%</button><button id="art-zoom-in" type="button" aria-label="Zoom in">+</button><button id="close-art" type="button" aria-label="Close">×</button></div></div><div id="art-stage" class="art-stage"><img id="art-image" alt="" /></div></dialog><dialog id="profile-dialog" class="entry-dialog" aria-label="Edit character background and points">
       <form id="profile-form">
         <p class="eyebrow">Character details</p>
