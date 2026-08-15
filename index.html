@@ -238,6 +238,7 @@
             <button id="export-hdc" class="quiet" hidden>Export HDC</button>
             <button id="save-pdf" class="quiet">Save PDF</button>
             <button id="print-character" class="quiet">Print</button>
+            <button id="report-issue" class="quiet">Report Issue</button>
             <button id="delete-character" class="quiet danger-text">Delete Character</button>
           </div>
         </section>
@@ -274,6 +275,7 @@
         <button id="dice-count-plus" type="button" aria-label="Add one die">&plus;</button>
       </div>
       <label class="dice-half"><input id="dice-half" type="checkbox"> Add &frac12;d6</label>
+      <div class="roll-modifier"><span>Roll modifier</span><button id="roll-mod-minus" type="button" aria-label="Subtract one from roll modifier">&minus;</button><strong id="roll-mod-display">0</strong><button id="roll-mod-plus" type="button" aria-label="Add one to roll modifier">&plus;</button></div>
       <fieldset class="dice-modes"><legend>Roll type</legend>
         <label><input type="checkbox" data-dice-mode="check" checked> Skill Roll</label>
         <label><input type="checkbox" data-dice-mode="normal"> Normal Damage</label>
@@ -287,6 +289,7 @@
       <button id="roll-dice-tray" class="primary dice-roll-button" type="button">Roll 3d6</button>
       <div id="roll-result" class="roll-result" role="status" aria-live="polite">Choose a roll.</div>
     </dialog>
+    <dialog id="issue-dialog" class="entry-dialog" aria-label="Report an issue"><form id="issue-form"><p class="eyebrow">Support</p><h3>Report Issue</h3><p>Describe what happened. The app will attach device, service-worker, cache, and recent in-app error details. Character content and artwork are not included.</p><label>Summary<input id="issue-summary" required maxlength="160" /></label><label>What happened?<textarea id="issue-steps" rows="6" required></textarea></label><div class="dialog-actions"><button id="cancel-issue" type="button" class="quiet">Cancel</button><button type="submit" class="primary">Prepare Email</button></div><small>Your mail app will open with the report addressed to prestonhunt@hotmail.com. You choose whether to send it.</small></form></dialog>
     <dialog id="art-dialog" class="art-dialog" aria-label="Full-size character art"><div class="art-toolbar"><strong id="art-title">Character art</strong><div><button id="art-zoom-out" type="button" aria-label="Zoom out">-</button><button id="art-zoom-reset" type="button">100%</button><button id="art-zoom-in" type="button" aria-label="Zoom in">+</button><button id="close-art" type="button" aria-label="Close">×</button></div></div><div id="art-stage" class="art-stage"><img id="art-image" alt="" /></div></dialog><dialog id="profile-dialog" class="entry-dialog" aria-label="Edit character background and points">
       <form id="profile-form">
         <p class="eyebrow">Character details</p>

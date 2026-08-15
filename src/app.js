@@ -11,6 +11,7 @@ import {
 } from "./rules.js";
 import { attackPowerProfile4e } from "./dice.js";
 import { createDiceTray4e } from "./dice-ui.js";
+import { emailIssue4e, installDiagnostics4e, issueReport4e, logDiagnostic4e } from "./diagnostics.js";
 import { importHdc, exportHdc as buildHdc } from "./hdc.js";
 import {
   deleteCharacter,
@@ -90,6 +91,7 @@ let current = null;
 let currentSheetPage = "play";
 let editMode = false, isDraft = false, editSnapshot = null;
 let selectedEntry = null;
+installDiagnostics4e();
 const $ = (selector) => document.querySelector(selector);
 function show(view) {
   document
@@ -135,6 +137,7 @@ function setEditMode(value){
   $("#edit-character").hidden=editMode; $("#save-button").hidden=!editMode; $("#dice-overlay-button").disabled=editMode; $(".combat-panel").inert=editMode;
   const combatTab=document.querySelector('[data-page="combat"]'); if(combatTab)combatTab.disabled=editMode;
   document.querySelectorAll("[data-stat], #identity-form input, #identity-form textarea, #identity-form button").forEach(node=>node.disabled=!editMode);
+  document.querySelectorAll("[data-current]").forEach(node=>node.disabled=editMode);
   document.querySelectorAll("[data-sheet-roll], .entry-roll").forEach(node=>node.disabled=editMode);
   $("#profile-button").hidden=!editMode; $("#add-entry").hidden=!editMode; $("#edit-entry-detail").hidden=!editMode;
 }
@@ -172,7 +175,8 @@ function renderLibrary() {
     );
 }
 function inputStat(key, value) {
-  return `<label class="stat"><span>${key}</span><input inputmode="numeric" data-stat="${key}" value="${value}" aria-label="${key}" ${editMode ? "" : "disabled"} /></label>`;
+  if (!editMode) return primaryKeys.includes(key) ? `<button type="button" class="stat read rollable-stat base-stat-roll" data-base-stat="${key}"><span>${key}</span><strong>${value}</strong></button>` : `<div class="stat read"><span>${key}</span><strong>${value}</strong></div>`;
+  return `<label class="stat"><span>${key}</span><input inputmode="numeric" data-stat="${key}" value="${value}" aria-label="${key}" /></label>`;
 }
 function escapeHtml(value) {
   const node = document.createElement("span");
@@ -490,7 +494,7 @@ function renderSheet() {
   $("#resources").innerHTML = ["BODY", "STUN", "END"]
     .map(
       (key) =>
-        `<label><span>${key}</span><input inputmode="numeric" data-current="${key}" value="${current.current[key]}" ${editMode ? "" : "disabled"} /><small>/ ${current.characteristics[key]}</small></label>`,
+        `<label><span>${key}</span><input inputmode="text" enterkeyhint="done" data-current="${key}" value="${current.current[key]}" ${editMode ? "disabled" : ""} /><small>/ ${current.characteristics[key]}</small></label>`,
     )
     .join("");
   renderDerived();
@@ -502,26 +506,31 @@ function renderSheet() {
   document
     .querySelectorAll("[data-stat]")
     .forEach((node) => node.addEventListener("change", updateStat));
-  document.querySelectorAll("[data-current]").forEach((node) => node.addEventListener("change", () => { current.current[node.dataset.current] = Number(node.value); }));
+  document.querySelectorAll("[data-current]").forEach((node) => { node.addEventListener("focus",()=>node.select()); node.addEventListener("keydown",event=>{if(event.key==="Enter")node.blur();}); node.addEventListener("change",()=>applyResourceEntry(node)); });
+  document.querySelectorAll("[data-base-stat]").forEach(node=>node.addEventListener("click",()=>rollAgainstTarget(characteristicRollTarget(current.characteristics[node.dataset.baseStat]),node.dataset.baseStat)));
   setEditMode(editMode);
+}
+function characteristicRollTarget(value){ return 9 + Math.floor(Number(value || 0) / 5 + 0.5); }
+function applyResourceEntry(node){
+  const text=String(node.value).trim(),key=node.dataset.current,previous=Number(current.current[key]||0);
+  if(!/^[+-]?\d+$/.test(text)){node.value=previous;return toast("Enter a whole number, +number, or -number");}
+  current.current[key]=/^[+-]/.test(text)?previous+Number(text):Number(text);
+  saveCharacter(current);logDiagnostic4e(`${key} changed from ${previous} to ${current.current[key]}`);refreshResources();renderCombat();
 }
 function renderDerived() {
   const c = current.characteristics;
   $("#characteristic-cost").textContent =
     `${totalCharacteristicCost(c)} characteristic & movement points`;
   const statCards = (rows,rolls=false) => rows.map(([k, v]) => rolls ? `<button type="button" class="stat read rollable-stat" data-sheet-roll="${String(v).replace("-","")}" data-roll-label="${k}"><span>${k}</span><strong>${v}</strong></button>` : `<div class="stat read"><span>${k}</span><strong>${v}</strong></div>`).join("");
-  $("#combat-values").innerHTML = statCards([
-    ["OCV", combatValue(c.DEX)],
-    ["DCV", combatValue(c.DEX)],
-    ["ECV", combatValue(c.EGO)],
-  ]);
-  const roll = value => `${9 + Math.floor(Number(value || 0) / 5 + 0.5)}-`;
+  $("#combat-values").innerHTML = [["OCV",combatValue(c.DEX),"DCV"],["DCV",combatValue(c.DEX),"OCV"],["ECV",combatValue(c.EGO),"ECV"]].map(([label,value,defense])=>`<button type="button" class="stat read rollable-stat" data-combat-roll="${value}" data-roll-label="${label}" data-defense-label="${defense}"><span>${label}</span><strong>${value}</strong></button>`).join("");
+  const roll = value => `${characteristicRollTarget(value)}-`;
   $("#characteristic-rolls").innerHTML = statCards([
     ["STR", roll(c.STR)], ["DEX", roll(c.DEX)], ["INT", roll(c.INT)],
     ["EGO", roll(c.EGO)], ["PRE", roll(c.PRE)], ["PER", roll(c.INT)],
   ],true);
   renderDefenseValues();
   document.querySelectorAll("[data-sheet-roll]").forEach(node=>node.addEventListener("click",()=>rollAgainstTarget(Number(node.dataset.sheetRoll),node.dataset.rollLabel)));
+  document.querySelectorAll("[data-combat-roll]").forEach(node=>node.addEventListener("click",()=>queueCombatValue(Number(node.dataset.combatRoll),node.dataset.rollLabel,node.dataset.defenseLabel)));
 }
 function updateStat(event) {
   markHdcDirty();
@@ -1287,6 +1296,9 @@ $("#roll-knockback").addEventListener("click",()=>{const count=Number($("#knockb
 $("#roll-presence").addEventListener("click",()=>{const dice=Math.max(0,Math.floor(Number(current.characteristics.PRE||0)/5)+Number($("#presence-modifier").value||0)),values=Array.from({length:dice},()=>1+Math.floor(Math.random()*6)),result=presenceAttack4e(current.characteristics.PRE,{roll:values.reduce((a,b)=>a+b,0),modifierDice:$("#presence-modifier").value,targetPre:$("#presence-target-pre").value,targetEgo:$("#presence-target-ego").value});$("#presence-result").textContent=`${dice}d6 = ${result.total} vs. ${result.defense}: ${result.effect} · ${result.reference}`;});$("#export-hdc").addEventListener("click", exportHdc);
 $("#save-pdf").addEventListener("click",()=>{try{saveCharacterPdf(current);toast("Letter-size PDF downloaded");}catch(error){toast(error.message);}});
 $("#print-character").addEventListener("click",()=>{try{printCharacter(current);}catch(error){toast(error.message);}});
+$("#report-issue").addEventListener("click",()=>$("#issue-dialog").showModal());
+$("#cancel-issue").addEventListener("click",()=>$("#issue-dialog").close());
+$("#issue-form").addEventListener("submit",async event=>{event.preventDefault();const report=await issueReport4e({summary:$("#issue-summary").value.trim(),steps:$("#issue-steps").value.trim(),character:current,page:currentSheetPage,editMode});logDiagnostic4e("Issue report prepared");emailIssue4e(report);});
 $("#sheet-portrait").addEventListener("click",()=>openArt(current));
 $("#close-art").addEventListener("click",()=>$("#art-dialog").close());
 $("#art-zoom-in").addEventListener("click",()=>{artZoom=Math.min(4,artZoom+.25);updateArtZoom();});
@@ -1539,7 +1551,7 @@ $("#reset-resources").addEventListener("click", () => {
   toast("Resources reset");
 });
 const diceTray=createDiceTray4e({getCharacter:()=>current});
-const {rollAgainstTarget,rollPowerAttack,rollPowerDamage}=diceTray;
+const {queueCombatValue,rollAgainstTarget,rollPowerAttack,rollPowerDamage}=diceTray;
 diceTray.bind();document.querySelectorAll("[data-nav]").forEach((button) =>
   button.addEventListener("click", () => {
     if (button.dataset.nav === "sheet-view" && !current) {
