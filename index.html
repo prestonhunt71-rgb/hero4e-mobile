@@ -289,11 +289,12 @@
       </div>
       <label class="dice-half"><input id="dice-half" type="checkbox"> Add &frac12;d6</label>
       <fieldset class="dice-modes"><legend>Roll type</legend>
+        <label><input type="checkbox" data-dice-mode="check" checked> Skill Roll</label>
         <label><input type="checkbox" data-dice-mode="normal"> Normal Damage</label>
         <label><input type="checkbox" data-dice-mode="mental"> Mental / NND Damage</label>
         <label><input type="checkbox" data-dice-mode="killing"> Killing Damage</label>
       </fieldset>
-      <div id="killing-adjustments" class="killing-adjustments" hidden>
+      <div id="killing-adjustments" class="killing-adjustments">
         <div><span>BODY modifier</span><button id="body-mod-minus" type="button" aria-label="Subtract one BODY">&minus;</button><strong id="body-mod-display">0</strong><button id="body-mod-plus" type="button" aria-label="Add one BODY">&plus;</button></div>
         <div><span>STUN Multiplier modifier</span><button id="multiplier-mod-minus" type="button" aria-label="Subtract one from STUN Multiplier">&minus;</button><strong id="multiplier-mod-display">0</strong><button id="multiplier-mod-plus" type="button" aria-label="Add one to STUN Multiplier">&plus;</button></div>
       </div>

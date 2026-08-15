@@ -1056,6 +1056,7 @@ main:has(#sheet-view.active) + .bottom-nav .bottom-save { display: block; }
 .defense-card strong { font:900 1.5rem var(--display); margin-top:4px; }
 .defense-card small { color:#44515b; margin-top:3px; }
 #abilities-panel { clip-path:none; padding-bottom:22px; }
+.combat-panel { clip-path:none !important; padding-bottom:22px; }
 .dice-dialog { width:min(540px,calc(100% - 18px)); margin:auto auto 0; border:3px solid #020507; border-radius:22px 22px 0 0; background:#101820; color:var(--text); padding:18px 18px calc(24px + env(safe-area-inset-bottom)); box-shadow:0 -12px 36px #000b; }
 .dice-dialog::backdrop { background:#020812aa; backdrop-filter:blur(3px); }
 .dice-dialog-head { display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #33404a; margin-bottom:18px; }
@@ -1089,5 +1090,6 @@ main:has(#sheet-view.active) + .bottom-nav .bottom-save { display: block; }
 .killing-adjustments span { font-size:.72rem; }
 .killing-adjustments strong { text-align:center; }
 .killing-adjustments button { padding:4px; }
+.dice-dialog :disabled { opacity:.38; cursor:not-allowed; }
 .dice-roll-button { width:100%; }
 @media(max-width:420px){.entry-list{grid-template-columns:minmax(0,1fr) 70px}.entry-roll{min-width:0}.killing-adjustments>div{grid-template-columns:1fr 42px 42px 42px}}
