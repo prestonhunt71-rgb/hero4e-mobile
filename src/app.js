@@ -102,6 +102,7 @@ function show(view) {
     .forEach((node) =>
       node.classList.toggle("active", node.dataset.nav === view),
     );
+  if(view === "library-view") setAppNav("character");
 }
 function toast(message) {
   const node = $("#toast");
@@ -109,25 +110,43 @@ function toast(message) {
   node.classList.add("show");
   setTimeout(() => node.classList.remove("show"), 2200);
 }
-const sheetPageOrder = ["actions", "characteristics", "skills", "talents", "martialarts", "powers", "disadvantages"];
-const sheetPageLabels = {actions:"Actions",characteristics:"Characteristics",skills:"Skills",talents:"Talents / Perks",martialarts:"Martial Arts",powers:"Powers",disadvantages:"Disadvantages",options:"Options"};
+const sheetPageOrder = ["actions", "characteristics", "skills", "talents", "martialarts", "powers", "disadvantages", "background", "art", "math", "options"];
+const sheetPageLabels = {actions:"Actions",characteristics:"Characteristics",skills:"Skills",talents:"Talents / Perks",martialarts:"Martial Arts",powers:"Powers",disadvantages:"Disadvantages",background:"Background",art:"Character Art",math:"Balance Sheet",options:"Options",play:"Play"};
 function setupSheetPages() {
   const groups = {
-    actions: [$(".play-speed-panel"), $(".combat-panel")],
-    characteristics: [$("#movement")?.closest(".panel"), $("#combat-values")?.closest(".panel"), $(".characteristics-rolls-panel"), $(".defenses-panel"), $(".characteristics-panel")],
+    actions: [$(".character-actions-panel")], play: [$(".play-speed-panel"), $(".combat-values-panel"), $(".defenses-panel"), $(".combat-panel")],
+    characteristics: [$("#movement")?.closest(".panel"), $(".characteristics-rolls-panel"), $(".characteristics-panel")],
     skills: [$("#skills-panel")], talents: [$("#talents-panel")], martialarts: [$("#martial-panel")], powers: [$("#powers-panel")], disadvantages: [$("#disadvantages-panel")],
-    options: [$("#art-page-panel"), $("#profile-panel"), $("#point-grid")?.closest(".panel"), $("#math-panel"), $("#options-panel")],
+    background: [$("#profile-panel")], art: [$("#art-page-panel")], math: [$("#point-grid")?.closest(".panel"), $("#math-panel")], options: [$("#options-panel")],
   };
   for (const [page, nodes] of Object.entries(groups)) for (const node of nodes.filter(Boolean)) { node.classList.add("sheet-section-page"); node.dataset.sheetPage = page; }
   document.querySelectorAll("[data-jump]").forEach((button, index) => button.dataset.page = sheetPageOrder[index]);
 }
 function setSheetMenu(open){$("#sheet-jump")?.classList.toggle("menu-open",open);$("#sheet-page-menu").classList.toggle("open",open);$("#sheet-menu-button").setAttribute("aria-expanded",String(open));}
 function showSheetPage(page) {
-  if(![...sheetPageOrder,"options"].includes(page))page="actions";currentSheetPage = page;
+  if(![...sheetPageOrder,"play"].includes(page))page="actions";currentSheetPage = page;
+  if(page==="play")setAppNav("play");else if(page==="options")setAppNav("more");else{lastCharacterPage=page;setAppNav("character");}
   document.querySelectorAll("[data-sheet-page]").forEach(node => node.classList.toggle("sheet-page-active", node.dataset.sheetPage === page));
   document.querySelectorAll("[data-jump]").forEach(button => button.classList.toggle("active", button.dataset.page === page));
   $("#sheet-page-title").textContent=sheetPageLabels[page];setSheetMenu(false);
   const sheetView=$("#sheet-view"); if(sheetView) sheetView.scrollTop=0;
+}
+let lastCharacterPage = "actions";
+function setAppNav(mode){document.querySelectorAll("[data-app-mode]").forEach(button=>button.classList.toggle("active",button.dataset.appMode===mode));}
+function openAppMode(mode){
+  if(mode==="character"){
+    if(current){show("sheet-view");showSheetPage(lastCharacterPage);}else show("library-view");
+  }else if(mode==="play"){
+    if(!current)return toast("Choose a character first");
+    if(editMode)return toast("Save the character before entering Play");
+    show("sheet-view");showSheetPage("play");
+  }else if(mode==="tools"){
+    if(editMode)return toast("Save the character before using dice");
+    $("#dice-overlay-button").click();setAppNav("tools");
+  }else if(mode==="more"){
+    if(!current)return toast("Choose a character first");
+    show("sheet-view");showSheetPage("options");
+  }else toast("Campaign management is coming next");
 }
 function setupSheetGestures(){let startX=0,startY=0;const view=$("#sheet-view");view.addEventListener("touchstart",event=>{if(event.touches.length===1){startX=event.touches[0].clientX;startY=event.touches[0].clientY;}},{passive:true});view.addEventListener("touchend",event=>{if(!startX||!event.changedTouches.length)return;const dx=event.changedTouches[0].clientX-startX,dy=event.changedTouches[0].clientY-startY;startX=0;if(Math.abs(dx)<65||Math.abs(dx)<Math.abs(dy)*1.25||event.target.closest("input,textarea,select,button,dialog"))return;const index=sheetPageOrder.indexOf(currentSheetPage);if(index<0)return;const next=dx<0?Math.min(sheetPageOrder.length-1,index+1):Math.max(0,index-1);if(next!==index)showSheetPage(sheetPageOrder[next]);},{passive:true});}
 function setupIdentityOptions(){
@@ -1577,8 +1596,10 @@ diceTray.bind();document.querySelectorAll("[data-nav]").forEach((button) =>
 );
 $("#sheet-menu-button").addEventListener("click",()=>setSheetMenu(!$("#sheet-page-menu").classList.contains("open")));
 $("#header-options").addEventListener("click",()=>showSheetPage("options"));
-$("#header-conditions").addEventListener("click",()=>{showSheetPage("actions");requestAnimationFrame(()=>$(".combat-panel")?.scrollIntoView({block:"start"}));});
+$("#header-conditions").addEventListener("click",()=>{showSheetPage("play");requestAnimationFrame(()=>$(".combat-panel")?.scrollIntoView({block:"start"}));});
 document.querySelectorAll("[data-jump]").forEach((button) => button.addEventListener("click", () => showSheetPage(button.dataset.page)));
+document.querySelectorAll("[data-app-mode]").forEach(button=>button.addEventListener("click",()=>openAppMode(button.dataset.appMode)));
+document.querySelectorAll("[data-open-play]").forEach(button=>button.addEventListener("click",()=>openAppMode("play")));
 if ("serviceWorker" in navigator) {
   let reloading=false;
   navigator.serviceWorker.addEventListener("controllerchange",()=>{if(!reloading){reloading=true;location.reload();}});
