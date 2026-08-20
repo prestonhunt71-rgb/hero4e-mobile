@@ -471,7 +471,7 @@ function renderCombat() {
 }
 function refreshResources() {
   document.querySelectorAll("[data-current]").forEach((node) => { node.value = current.current[node.dataset.current]; });
-  if(current){const host=$("#header-resources"),keys=["STUN","END","BODY"];if(host.children.length!==keys.length)host.innerHTML=keys.map(key=>`<label><b>${key}</b><input inputmode="text" enterkeyhint="done" data-current="${key}" value="${current.current[key]}" ${editMode ? "disabled" : ""}><small>/${current.characteristics[key]}</small></label>`).join("");host.querySelectorAll("[data-current]").forEach(node=>{node.value=current.current[node.dataset.current];node.disabled=editMode;});}
+  if(current){const host=$("#header-resources"),keys=["STUN","BODY","END"];if(host.children.length!==keys.length)host.innerHTML=keys.map(key=>`<label><b>${key}</b><input inputmode="text" enterkeyhint="done" data-current="${key}" value="${current.current[key]}" ${editMode ? "disabled" : ""}><small>/${current.characteristics[key]}</small></label>`).join("");host.querySelectorAll("[data-current]").forEach(node=>{node.value=current.current[node.dataset.current];node.disabled=editMode;});}
 }
 function renderPortraits() {
   const markup = current.portrait?.dataUrl
@@ -531,6 +531,7 @@ function renderDerived() {
     `${totalCharacteristicCost(c)} characteristic & movement points`;
   const statCards = (rows,rolls=false) => rows.map(([k, v]) => rolls ? `<button type="button" class="stat read rollable-stat" data-sheet-roll="${String(v).replace("-","")}" data-roll-label="${k}"><span>${k}</span><strong>${v}</strong></button>` : `<div class="stat read"><span>${k}</span><strong>${v}</strong></div>`).join("");
   const headerDefenses=characterDefenses(), mentalDefense=(current.sections?.powers||[]).filter(power=>power.mechanics?.key==="mentalDefense").reduce((sum,power)=>sum+Number(power.mechanics?.levels||0),0);
+  $("#header-spd").textContent=Number(c.SPD||0); $("#header-dex").textContent=Number(c.DEX||0); $("#header-move").textContent=Number(c.RUNNING||6);
   const headerCombat=[["#header-ocv",combatValue(c.DEX)],["#header-dcv",combatValue(c.DEX)],["#header-ecv",combatValue(c.EGO)]]; for(const [selector,value] of headerCombat){const output=$(selector);output.textContent=value;output.closest("[data-combat-roll]").dataset.combatRoll=value;}
   $("#header-pd strong").textContent=`${headerDefenses.physical.total} / ${headerDefenses.physical.resistant}`; $("#header-ed strong").textContent=`${headerDefenses.energy.total} / ${headerDefenses.energy.resistant}`; $("#header-ego-defense strong").textContent=mentalDefense;
   $("#combat-values").innerHTML = [["OCV",combatValue(c.DEX),"DCV"],["DCV",combatValue(c.DEX),"OCV"],["ECV",combatValue(c.EGO),"ECV"]].map(([label,value,defense])=>`<button type="button" class="stat read rollable-stat" data-combat-roll="${value}" data-roll-label="${label}" data-defense-label="${defense}"><span>${label}</span><strong>${value}</strong></button>`).join("");
