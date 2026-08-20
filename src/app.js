@@ -489,7 +489,7 @@ function renderSheet() {
   if (!current) return;
   $("#character-name").textContent = current.name;
   renderPortraits();
-  $("#player-name").textContent = current.playerName ? `Player: ${current.playerName}` : "";
+  $("#player-name").textContent = current.playerName ? `Played By: ${current.playerName}` : "";
   $("#identity-name").value=current.name; $("#identity-player").value=current.playerName||"";
   $("#characteristics").innerHTML = [...primaryKeys, ...figuredKeys]
     .map((key) => inputStat(key, current.characteristics[key]))
@@ -529,7 +529,7 @@ function renderDerived() {
   $("#characteristic-cost").textContent =
     `${totalCharacteristicCost(c)} characteristic & movement points`;
   const statCards = (rows,rolls=false) => rows.map(([k, v]) => rolls ? `<button type="button" class="stat read rollable-stat" data-sheet-roll="${String(v).replace("-","")}" data-roll-label="${k}"><span>${k}</span><strong>${v}</strong></button>` : `<div class="stat read"><span>${k}</span><strong>${v}</strong></div>`).join("");
-  $("#header-ocv strong").textContent=combatValue(c.DEX); $("#header-dcv strong").textContent=combatValue(c.DEX);
+  $("#header-pd strong").textContent=Number(c.PD||0); $("#header-ed strong").textContent=Number(c.ED||0);
   $("#combat-values").innerHTML = [["OCV",combatValue(c.DEX),"DCV"],["DCV",combatValue(c.DEX),"OCV"],["ECV",combatValue(c.EGO),"ECV"]].map(([label,value,defense])=>`<button type="button" class="stat read rollable-stat" data-combat-roll="${value}" data-roll-label="${label}" data-defense-label="${defense}"><span>${label}</span><strong>${value}</strong></button>`).join("");
   const roll = value => `${characteristicRollTarget(value)}-`;
   $("#characteristic-rolls").innerHTML = statCards([
@@ -1571,8 +1571,7 @@ diceTray.bind();document.querySelectorAll("[data-nav]").forEach((button) =>
 );
 $("#sheet-menu-button").addEventListener("click",()=>setSheetMenu(!$("#sheet-page-menu").classList.contains("open")));
 $("#header-options").addEventListener("click",()=>showSheetPage("options"));
-$("#header-ocv").addEventListener("click",()=>queueCombatValue(combatValue(current.characteristics.DEX),"OCV","DCV"));
-$("#header-dcv").addEventListener("click",()=>queueCombatValue(combatValue(current.characteristics.DEX),"DCV","OCV"));
+$("#header-conditions").addEventListener("click",()=>showSheetPage("combat"));
 document.querySelectorAll("[data-jump]").forEach((button) => button.addEventListener("click", () => showSheetPage(button.dataset.page)));
 if ("serviceWorker" in navigator) {
   let reloading=false;

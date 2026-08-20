@@ -1127,3 +1127,21 @@ body{background:#0d141a;background-image:none;font-family:inherit}.view{max-widt
 
 #sheet-view{max-width:100%;overflow-x:clip}
 .sheet-heading,.sheet-jump{max-width:calc(100% + 20px)}
+
+/* v55: HERO-specific mapping of the compact character header. */
+.sheet-hero-summary{grid-template-columns:62px 62px minmax(92px,112px) 1fr}
+.hero-metric small{display:block;color:#93a4af;font-size:.55rem;margin-top:2px}
+.sheet-header-actions{display:grid;grid-template-columns:94px 1fr;gap:10px;margin-top:10px}
+.sheet-header-actions .header-tool{height:48px;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:5px;background:#10181e}
+.sheet-header-actions .header-tool span{font-size:1.35rem}.sheet-header-actions .header-tool b{font-size:.76rem;text-transform:uppercase}
+.sheet-jump{top:calc(273px + env(safe-area-inset-top))}
+@media(max-width:430px){.sheet-hero-summary{grid-template-columns:54px 54px 90px 1fr}.sheet-jump{top:calc(257px + env(safe-area-inset-top))}}
+
+/* v56: locked top navigation with a Beyond-style floating d6 tray button. */
+:root{--bottom-nav-clearance:84px}
+body{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+.floating-dice{position:fixed;right:max(20px,calc((100vw - 720px)/2 + 20px));bottom:calc(22px + env(safe-area-inset-bottom));z-index:24}
+.floating-dice button{display:grid;place-items:center;width:66px;height:66px;padding:0;border:0;border-radius:50%;background:#df0d18;color:#fff;box-shadow:0 8px 24px #0009}
+.floating-dice .d6-icon{font-size:2.25rem;line-height:1}
+.options-save{width:100%;margin:12px 0}.options-save[hidden]{display:none}
+.dice-dialog{margin:auto auto 0;max-height:min(78dvh,760px);overflow-y:auto}

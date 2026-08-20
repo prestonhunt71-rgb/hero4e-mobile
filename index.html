@@ -92,12 +92,12 @@
             <button id="identity-button" class="identity-heading"><h2 id="character-name">Hero</h2><small id="player-name"></small></button>
           </div>
           <div class="sheet-hero-summary">
-            <button id="header-ocv" class="hero-metric" type="button"><span>OCV</span><strong>3</strong></button>
-            <button id="header-dcv" class="hero-metric shield-metric" type="button"><span>DCV</span><strong>3</strong></button>
+            <div id="header-pd" class="hero-metric"><span>PD</span><strong>2</strong><small>Physical</small></div>
+            <div id="header-ed" class="hero-metric shield-metric"><span>ED</span><strong>2</strong><small>Energy</small></div>
             <button id="sheet-portrait" class="sheet-portrait" type="button" aria-label="View character art"><span>H</span></button>
             <div id="header-resources" class="header-resources" aria-label="Current BODY STUN and END"></div>
-            <button id="header-options" class="header-tool" type="button" aria-label="Open character options">⚙</button>
           </div>
+          <div class="sheet-header-actions"><button id="header-options" class="header-tool" type="button" aria-label="Open character options"><span aria-hidden="true">⚙</span><b>Options</b></button><button id="header-conditions" class="header-tool" type="button"><b>Conditions</b></button></div>
         </header>        <div id="edit-mode-banner" class="edit-mode-banner" hidden>EDIT MODE · Dice and Combat are locked until you save.</div>
         <nav class="sheet-jump" aria-label="Character sheet sections">
           <button id="sheet-menu-button" class="sheet-menu-button" type="button" aria-label="Open character page menu" aria-expanded="false"><span aria-hidden="true">☰</span></button>
@@ -242,6 +242,7 @@
           <div class="panel-title"><h3>Options</h3></div>
           <button id="edit-character" class="primary edit-character-button" type="button">Edit Character</button>
           <p id="mode-status" class="mode-status">Play mode · Character fields are locked.</p>
+          <button id="save-button" class="primary options-save" type="button" hidden>Save Character</button>
           <div class="options-actions">
             <button id="export-json" class="quiet">Export HERO4E</button>
             <button id="export-foundry" class="quiet">Export Foundry</button>
@@ -254,29 +255,9 @@
         </section>
       </section>
     </main>
-    <nav class="bottom-nav" aria-label="Application">
-      <button id="save-button" class="bottom-save" type="button">Save Character</button>
-      <button class="active" data-nav="library-view">
-        <span class="nav-icon"
-          ><svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M12 3 3 9l9 5 9-5-9-6Zm-7 9 7 4 7-4v5l-7 4-7-4v-5Z"
-            /></svg></span
-        >Characters
-      </button>
-      <button id="dice-overlay-button" type="button" aria-label="Open dice roller">
-        <span class="nav-icon d6-icon" aria-hidden="true">⚄</span>
-        Dice
-      </button>
-      <button data-nav="sheet-view">
-        <span class="nav-icon"
-          ><svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M6 3h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm2 4v2h8V7H8Zm0 4v2h8v-2H8Zm0 4v2h5v-2H8Z"
-            /></svg></span
-        >Sheet
-      </button>
-    </nav>
+    <aside class="floating-dice" aria-label="Dice">
+      <button id="dice-overlay-button" type="button" aria-label="Open dice roller"><span class="d6-icon" aria-hidden="true">⚄</span></button>
+    </aside>
     <dialog id="dice-dialog" class="dice-dialog" aria-label="Roll Dice">
       <div class="dice-dialog-head"><h3>Roll Dice</h3><button id="close-dice" type="button" aria-label="Close dice roller">&times;</button></div>
       <div class="dice-count-control" aria-label="Number of six-sided dice">
