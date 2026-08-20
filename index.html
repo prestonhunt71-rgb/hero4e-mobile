@@ -102,10 +102,10 @@
         </header>        <div id="edit-mode-banner" class="edit-mode-banner" hidden>EDIT MODE · Dice and Combat are locked until you save.</div>
         <nav class="sheet-jump" aria-label="Character sheet sections">
           <button id="sheet-menu-button" class="sheet-menu-button" type="button" aria-label="Open character page menu" aria-expanded="false"><span aria-hidden="true">☰</span></button>
-          <strong id="sheet-page-title">Characteristics</strong>
+          <strong id="sheet-page-title">Actions</strong>
           <span class="page-view-icons" aria-hidden="true">▦ &nbsp;☷</span>
           <div id="sheet-page-menu" class="sheet-page-menu">
-            <button data-jump=".characteristics-panel">Characteristics</button><button data-jump="#skills-panel">Skills</button><button data-jump="#talents-panel">Talents &amp; Perks</button><button data-jump="#powers-panel">Powers</button><button data-jump="#disadvantages-panel">Disadvantages</button><button data-jump="#art-page-panel">Character Art</button><button data-jump="#math-panel">Character Math</button><button data-jump="#options-panel">Options</button>
+            <button data-jump=".combat-panel">Actions</button><button data-jump=".characteristics-panel">Characteristics</button><button data-jump="#skills-panel">Skills</button><button data-jump="#talents-panel">Talents / Perks</button><button data-jump="#martial-panel">Martial Arts</button><button data-jump="#powers-panel">Powers</button><button data-jump="#disadvantages-panel">Disadvantages</button>
           </div>
         </nav>
         <div class="sheet-page-scroll">
@@ -160,6 +160,9 @@
         </section>
         <section class="panel entry-page" id="talents-panel">
           <div class="panel-title"><h3>Talents &amp; Perks</h3><button data-add-entry="talents" class="mini" hidden>Add</button></div><div id="talents-sections" class="entry-sections"></div>
+        </section>
+        <section class="panel entry-page" id="martial-panel">
+          <div class="panel-title"><h3>Martial Arts</h3><button data-add-entry="martialarts" class="mini" hidden>Add</button></div><div id="martial-sections" class="entry-sections"></div>
         </section>
         <section class="panel entry-page" id="powers-panel">
           <div class="panel-title"><h3>Powers</h3><div><span id="ability-count"></span><button data-add-entry="powers" class="mini" hidden>Add</button></div></div><div id="powers-sections" class="entry-sections"></div>

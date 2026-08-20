@@ -88,7 +88,7 @@ import {
   presenceAttack4e,
 } from "./combat.js";
 let current = null;
-let currentSheetPage = "characteristics";
+let currentSheetPage = "actions";
 let editMode = false, isDraft = false, editSnapshot = null;
 let selectedEntry = null;
 installDiagnostics4e();
@@ -109,26 +109,27 @@ function toast(message) {
   node.classList.add("show");
   setTimeout(() => node.classList.remove("show"), 2200);
 }
-const sheetPageOrder = ["characteristics", "skills", "talents", "powers", "disadvantages", "art", "math", "options"];
-const sheetPageLabels = {characteristics:"Characteristics",skills:"Skills",talents:"Talents & Perks",powers:"Powers",disadvantages:"Disadvantages",art:"Character Art",math:"Character Math",options:"Options"};
+const sheetPageOrder = ["actions", "characteristics", "skills", "talents", "martialarts", "powers", "disadvantages"];
+const sheetPageLabels = {actions:"Actions",characteristics:"Characteristics",skills:"Skills",talents:"Talents / Perks",martialarts:"Martial Arts",powers:"Powers",disadvantages:"Disadvantages",options:"Options"};
 function setupSheetPages() {
   const groups = {
-    characteristics: [$("#movement")?.closest(".panel"), $("#combat-values")?.closest(".panel"), $(".characteristics-rolls-panel"), $(".defenses-panel"), $(".play-speed-panel"), $(".characteristics-panel"), $(".combat-panel")],
-    skills: [$("#skills-panel")], talents: [$("#talents-panel")], powers: [$("#powers-panel")], disadvantages: [$("#disadvantages-panel")],
-    art: [$("#art-page-panel")], math: [$("#point-grid")?.closest(".panel"), $("#math-panel")], options: [$("#profile-panel"), $("#options-panel")],
+    actions: [$(".play-speed-panel"), $(".combat-panel")],
+    characteristics: [$("#movement")?.closest(".panel"), $("#combat-values")?.closest(".panel"), $(".characteristics-rolls-panel"), $(".defenses-panel"), $(".characteristics-panel")],
+    skills: [$("#skills-panel")], talents: [$("#talents-panel")], martialarts: [$("#martial-panel")], powers: [$("#powers-panel")], disadvantages: [$("#disadvantages-panel")],
+    options: [$("#art-page-panel"), $("#profile-panel"), $("#point-grid")?.closest(".panel"), $("#math-panel"), $("#options-panel")],
   };
   for (const [page, nodes] of Object.entries(groups)) for (const node of nodes.filter(Boolean)) { node.classList.add("sheet-section-page"); node.dataset.sheetPage = page; }
   document.querySelectorAll("[data-jump]").forEach((button, index) => button.dataset.page = sheetPageOrder[index]);
 }
 function setSheetMenu(open){$("#sheet-jump")?.classList.toggle("menu-open",open);$("#sheet-page-menu").classList.toggle("open",open);$("#sheet-menu-button").setAttribute("aria-expanded",String(open));}
 function showSheetPage(page) {
-  if(!sheetPageOrder.includes(page))page="characteristics";currentSheetPage = page;
+  if(![...sheetPageOrder,"options"].includes(page))page="actions";currentSheetPage = page;
   document.querySelectorAll("[data-sheet-page]").forEach(node => node.classList.toggle("sheet-page-active", node.dataset.sheetPage === page));
   document.querySelectorAll("[data-jump]").forEach(button => button.classList.toggle("active", button.dataset.page === page));
   $("#sheet-page-title").textContent=sheetPageLabels[page];setSheetMenu(false);
   const pageBody=$(".sheet-page-scroll"); if(pageBody) pageBody.scrollTop=0;
 }
-function setupSheetGestures(){let startX=0,startY=0;const view=$("#sheet-view");view.addEventListener("touchstart",event=>{if(event.touches.length===1){startX=event.touches[0].clientX;startY=event.touches[0].clientY;}},{passive:true});view.addEventListener("touchend",event=>{if(!startX||!event.changedTouches.length)return;const dx=event.changedTouches[0].clientX-startX,dy=event.changedTouches[0].clientY-startY;startX=0;if(Math.abs(dx)<65||Math.abs(dx)<Math.abs(dy)*1.25||event.target.closest("input,textarea,select,button,dialog"))return;const index=sheetPageOrder.indexOf(currentSheetPage),next=dx<0?Math.min(sheetPageOrder.length-1,index+1):Math.max(0,index-1);if(next!==index)showSheetPage(sheetPageOrder[next]);},{passive:true});}
+function setupSheetGestures(){let startX=0,startY=0;const view=$("#sheet-view");view.addEventListener("touchstart",event=>{if(event.touches.length===1){startX=event.touches[0].clientX;startY=event.touches[0].clientY;}},{passive:true});view.addEventListener("touchend",event=>{if(!startX||!event.changedTouches.length)return;const dx=event.changedTouches[0].clientX-startX,dy=event.changedTouches[0].clientY-startY;startX=0;if(Math.abs(dx)<65||Math.abs(dx)<Math.abs(dy)*1.25||event.target.closest("input,textarea,select,button,dialog"))return;const index=sheetPageOrder.indexOf(currentSheetPage);if(index<0)return;const next=dx<0?Math.min(sheetPageOrder.length-1,index+1):Math.max(0,index-1);if(next!==index)showSheetPage(sheetPageOrder[next]);},{passive:true});}
 function setupIdentityOptions(){
   const form=$("#identity-form"),dialog=$("#identity-dialog");
   form.classList.add("options-identity"); $("#mode-status").after(form); dialog.remove();
@@ -251,7 +252,8 @@ function renderEntries() {
     : "No Skills, Perks, Talents, Martial Arts, Powers, Disadvantages, or Equipment yet";
   const groupMarkup = selected => groups.filter(([key])=>selected.includes(key)).map(([key, entries]) =>
     `<details><summary>${labels[key] || key} <span>${entries.length}</span></summary><div class="entry-list">${entries.map((entry) => `<button class="entry" data-entry-section="${key}" data-entry-id="${escapeHtml(entry.id)}"><strong>${escapeHtml(entry.name || entry.alias || "Unnamed " + (labels[key] || "item"))}</strong><small>${escapeHtml([entry.alias !== entry.name ? entry.alias : "", entry.option, entry.mechanics ? entryMechanicsSummary(key, entry) : ""].filter(Boolean).join(" · "))}</small></button>`).join("")}</div></details>`).join("");
-  $("#skills-sections").innerHTML=groupMarkup(["skills","martialarts"]);
+  $("#skills-sections").innerHTML=groupMarkup(["skills"]);
+  $("#martial-sections").innerHTML=groupMarkup(["martialarts"]);
   $("#talents-sections").innerHTML=groupMarkup(["talents","perks"]);
   $("#powers-sections").innerHTML=groupMarkup(["powers","framework","equipment"]);
   $("#disadvantages-sections").innerHTML=groupMarkup(["disadvantages"]);
@@ -566,7 +568,7 @@ function updateStat(event) {
     current.characteristics[key] = previous;
   renderDerived();
 }
-function openCharacter(id) { currentSheetPage="characteristics"; current=normalizeCharacter(getCharacter(id)); isDraft=false; editSnapshot=null; setEditMode(false); renderSheet(); show("sheet-view"); }
+function openCharacter(id) { currentSheetPage="actions"; current=normalizeCharacter(getCharacter(id)); isDraft=false; editSnapshot=null; setEditMode(false); renderSheet(); show("sheet-view"); }
 function createCharacter() { currentSheetPage="options"; current=normalizeCharacter({name:"New Hero"}); isDraft=true; editSnapshot=null; setEditMode(true); renderSheet(); show("sheet-view"); showSheetPage("options"); toast("New character is not saved yet"); }
 function backupRoster() {
   const data = {
@@ -1446,13 +1448,13 @@ $("#new-character").addEventListener("click", createCharacter);
 $("#new-character-shortcut").addEventListener("click", createCharacter);
 $("#character-search").addEventListener("input", renderLibrary);
 $("#back-button").addEventListener("click",()=>{ if(editMode){current=isDraft?null:normalizeCharacter(editSnapshot);isDraft=false;editSnapshot=null;setEditMode(false);} renderLibrary();show("library-view"); });
-$("#save-button").addEventListener("click",()=>{ current.name=$("#identity-name").value.trim()||current.name;current.playerName=$("#identity-player").value.trim();current.updatedAt=new Date().toISOString();saveCharacter(current);isDraft=false;editSnapshot=null;setEditMode(false);currentSheetPage="characteristics";renderSheet();showSheetPage("characteristics");renderLibrary();toast("Character saved · Play mode"); });
+$("#save-button").addEventListener("click",()=>{ current.name=$("#identity-name").value.trim()||current.name;current.playerName=$("#identity-player").value.trim();current.updatedAt=new Date().toISOString();saveCharacter(current);isDraft=false;editSnapshot=null;setEditMode(false);currentSheetPage="actions";renderSheet();showSheetPage("actions");renderLibrary();toast("Character saved · Play mode"); });
 $("#json-input").addEventListener("change", async (event) => {
   try {
     const file = event.target.files[0];
     if (!file) return;
     current = importCharacterJson(await file.text());
-    isDraft=false;editSnapshot=null;setEditMode(false);currentSheetPage="characteristics";
+    isDraft=false;editSnapshot=null;setEditMode(false);currentSheetPage="actions";
     saveCharacter(current);
     renderLibrary();
     renderSheet();
@@ -1469,7 +1471,7 @@ $("#hdc-input").addEventListener("change", async (event) => {
     const file = event.target.files[0];
     if (!file) return;
     current = importHdc(await file.text());
-    isDraft=false;editSnapshot=null;setEditMode(false);currentSheetPage="characteristics";
+    isDraft=false;editSnapshot=null;setEditMode(false);currentSheetPage="actions";
     saveCharacter(current);
     renderLibrary();
     renderSheet();
@@ -1493,7 +1495,7 @@ $("#sample-character").addEventListener("click", async (event) => {
     if (!response.ok)
       throw new Error(`Sample download failed (${response.status})`);
     current = importHdc(await response.text());
-    isDraft=false;editSnapshot=null;setEditMode(false);currentSheetPage="characteristics";
+    isDraft=false;editSnapshot=null;setEditMode(false);currentSheetPage="actions";
     saveCharacter(current);
     renderLibrary();
     renderSheet();
@@ -1574,7 +1576,7 @@ diceTray.bind();document.querySelectorAll("[data-nav]").forEach((button) =>
 );
 $("#sheet-menu-button").addEventListener("click",()=>setSheetMenu(!$("#sheet-page-menu").classList.contains("open")));
 $("#header-options").addEventListener("click",()=>showSheetPage("options"));
-$("#header-conditions").addEventListener("click",()=>{showSheetPage("characteristics");requestAnimationFrame(()=>$(".combat-panel")?.scrollIntoView({block:"start"}));});
+$("#header-conditions").addEventListener("click",()=>{showSheetPage("actions");requestAnimationFrame(()=>$(".combat-panel")?.scrollIntoView({block:"start"}));});
 document.querySelectorAll("[data-jump]").forEach((button) => button.addEventListener("click", () => showSheetPage(button.dataset.page)));
 if ("serviceWorker" in navigator) {
   let reloading=false;
