@@ -1278,3 +1278,6 @@ body,#sheet-view.active{background:#0d1418}
 body:has(#sheet-view.active) .app-bottom-nav{display:grid}
 @media(max-width:390px){.app-bottom-nav{width:calc(100% - 18px);padding-inline:5px}.app-bottom-nav button b{font-size:.52rem}.floating-dice{right:16px}}
 #speed-chart{display:none!important}
+/* v65: center the complete five-item navigation within the phone viewport. */
+.app-bottom-nav{transform:translateX(-50%)}
+.floating-dice{right:max(20px,calc((100vw - min(540px,calc(100vw - 28px)))/2 + 10px))}
