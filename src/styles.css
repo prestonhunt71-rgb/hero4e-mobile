@@ -1145,3 +1145,43 @@ body{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
 .floating-dice .d6-icon{font-size:2.25rem;line-height:1}
 .options-save{width:100%;margin:12px 0}.options-save[hidden]{display:none}
 .dice-dialog{margin:auto auto 0;max-height:min(78dvh,760px);overflow-y:auto}
+
+/* v57: fixed HERO dashboard; only the selected page body scrolls. */
+body:has(#sheet-view.active){overflow:hidden}
+#sheet-view.active{display:grid;grid-template-rows:auto auto auto minmax(0,1fr);height:100dvh;overflow:hidden;padding:0 10px 0}
+.sheet-heading{position:relative;top:auto;z-index:16;flex:none;margin:0 -10px;padding:calc(10px + env(safe-area-inset-top)) 18px 8px}
+.sheet-title-row{min-height:52px}
+.sheet-title-row .icon-button{width:46px;height:46px;font-size:2.15rem}
+.identity-heading h2{font-size:1.05rem!important}.identity-heading small{font-size:.76rem}
+.sheet-header-actions{position:absolute;left:18px;right:18px;top:calc(62px + env(safe-area-inset-top));display:flex;justify-content:space-between;margin:0;pointer-events:none}
+.sheet-header-actions .header-tool{width:92px;height:40px;pointer-events:auto;background:#111b22}
+.sheet-hero-summary{grid-template-columns:minmax(72px,1fr) minmax(92px,118px) minmax(92px,1fr);gap:12px;margin:48px auto 0;max-width:520px;align-items:stretch}
+.header-cv-stack,.header-defense-stack{display:grid;grid-template-rows:repeat(3,1fr);gap:3px}
+.header-cv-stack>div,.header-defense-stack>div{display:flex;align-items:center;justify-content:space-between;gap:5px;min-height:28px;padding:3px 7px;background:#10181e;border-radius:3px}
+.header-cv-stack span,.header-defense-stack span{font-size:.6rem;font-weight:800;color:#c8d2d9}
+.header-cv-stack strong,.header-defense-stack strong{font-size:.9rem;color:#fff;white-space:nowrap}
+.sheet-portrait{height:104px;border-width:2px}
+.header-phases{display:flex;align-items:center;justify-content:center;gap:10px;max-width:520px;margin:7px auto 0;padding:5px 8px;background:#10181e;border-radius:3px}
+.header-phases span{font-size:.62rem;font-weight:800;text-transform:uppercase;color:#aebbc4}.header-phases strong{font-size:.8rem}
+.header-resources{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;max-width:520px;margin:6px auto 0}
+.header-resources>span{display:grid;grid-template-columns:1fr auto;grid-template-areas:"label value" "max max";padding:5px 8px;text-align:left}
+.header-resources b{grid-area:label}.header-resources strong{grid-area:value}.header-resources small{grid-area:max;text-align:right}
+.sheet-jump{position:relative;top:auto;z-index:17;flex:none;margin:0 -10px;padding:0 18px 7px;background:#202e39}
+.sheet-menu-button,.sheet-jump>strong,.page-view-icons{height:48px}
+.sheet-page-menu{top:51px}
+.sheet-page-scroll{min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;padding-top:8px;padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+.sheet-page-scroll>.panel{margin-left:0;margin-right:0}
+@media(max-width:430px){
+  .sheet-heading{padding-left:12px;padding-right:12px}.sheet-header-actions{left:12px;right:12px}
+  .sheet-hero-summary{grid-template-columns:72px 92px minmax(90px,1fr);gap:7px}
+  .sheet-portrait{height:92px}.header-cv-stack>div,.header-defense-stack>div{padding:2px 5px;min-height:26px}
+  .header-defense-stack span{font-size:.52rem}.header-cv-stack strong,.header-defense-stack strong{font-size:.8rem}
+  .sheet-jump{padding-left:12px;padding-right:12px}.sheet-jump>strong{padding:0 10px}.page-view-icons{padding:0 9px}
+}
+/* v58: exact eight-page character navigation with persistent controls. */
+.header-cv-stack>button{display:flex;align-items:center;justify-content:space-between;gap:5px;min-height:28px;padding:3px 7px;border:0;border-radius:3px;background:#10181e;color:#fff;box-shadow:none}
+.header-cv-stack>button:active{background:#213845}.header-cv-stack>button:disabled{opacity:.55}
+.header-resources>label{display:grid;grid-template-columns:1fr auto;grid-template-areas:"label value" "max max";padding:5px 8px;background:#10181e;border-radius:4px;color:#fff}
+.header-resources>label b{grid-area:label;font-size:.62rem}.header-resources>label input{grid-area:value;width:62px;min-height:0;padding:0;border:0;background:transparent;color:#fff;text-align:right;font-size:1rem;font-weight:800;box-shadow:none}.header-resources>label small{grid-area:max;text-align:right;color:#93a4af;font-size:.58rem}
+.header-resources>label input:focus{outline:1px solid #1599e5;background:#0a1116}
+#resources{display:none!important}

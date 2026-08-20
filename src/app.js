@@ -88,7 +88,7 @@ import {
   presenceAttack4e,
 } from "./combat.js";
 let current = null;
-let currentSheetPage = "play";
+let currentSheetPage = "characteristics";
 let editMode = false, isDraft = false, editSnapshot = null;
 let selectedEntry = null;
 installDiagnostics4e();
@@ -109,24 +109,24 @@ function toast(message) {
   node.classList.add("show");
   setTimeout(() => node.classList.remove("show"), 2200);
 }
-const sheetPageOrder = ["play", "characteristics", "abilities", "combat", "profile", "art", "math", "options"];
-const sheetPageLabels = {play:"Play",characteristics:"Characteristics & Math",abilities:"Skills & Powers",combat:"Combat",profile:"Background",art:"Character Art",math:"Point Math",options:"Options"};
+const sheetPageOrder = ["characteristics", "skills", "talents", "powers", "disadvantages", "art", "math", "options"];
+const sheetPageLabels = {characteristics:"Characteristics",skills:"Skills",talents:"Talents & Perks",powers:"Powers",disadvantages:"Disadvantages",art:"Character Art",math:"Character Math",options:"Options"};
 function setupSheetPages() {
   const groups = {
-    play: [$("#resources"), $("#movement")?.closest(".panel"), $("#combat-values")?.closest(".panel"), $(".characteristics-rolls-panel"), $(".defenses-panel"), $(".play-speed-panel")],
-    characteristics: [$(".characteristics-panel")], abilities: [$("#abilities-panel")], combat: [$(".combat-panel")],
-    profile: [$("#profile-panel")], art: [$("#art-page-panel")], math: [$("#point-grid")?.closest(".panel"), $("#math-panel")], options: [$("#options-panel")],
+    characteristics: [$("#movement")?.closest(".panel"), $("#combat-values")?.closest(".panel"), $(".characteristics-rolls-panel"), $(".defenses-panel"), $(".play-speed-panel"), $(".characteristics-panel"), $(".combat-panel")],
+    skills: [$("#skills-panel")], talents: [$("#talents-panel")], powers: [$("#powers-panel")], disadvantages: [$("#disadvantages-panel")],
+    art: [$("#art-page-panel")], math: [$("#point-grid")?.closest(".panel"), $("#math-panel")], options: [$("#profile-panel"), $("#options-panel")],
   };
   for (const [page, nodes] of Object.entries(groups)) for (const node of nodes.filter(Boolean)) { node.classList.add("sheet-section-page"); node.dataset.sheetPage = page; }
   document.querySelectorAll("[data-jump]").forEach((button, index) => button.dataset.page = sheetPageOrder[index]);
 }
 function setSheetMenu(open){$("#sheet-jump")?.classList.toggle("menu-open",open);$("#sheet-page-menu").classList.toggle("open",open);$("#sheet-menu-button").setAttribute("aria-expanded",String(open));}
 function showSheetPage(page) {
-  if(!sheetPageOrder.includes(page))page="play";currentSheetPage = page;
+  if(!sheetPageOrder.includes(page))page="characteristics";currentSheetPage = page;
   document.querySelectorAll("[data-sheet-page]").forEach(node => node.classList.toggle("sheet-page-active", node.dataset.sheetPage === page));
   document.querySelectorAll("[data-jump]").forEach(button => button.classList.toggle("active", button.dataset.page === page));
   $("#sheet-page-title").textContent=sheetPageLabels[page];setSheetMenu(false);
-  window.scrollTo({top: 0, behavior: "auto"});
+  const pageBody=$(".sheet-page-scroll"); if(pageBody) pageBody.scrollTop=0;
 }
 function setupSheetGestures(){let startX=0,startY=0;const view=$("#sheet-view");view.addEventListener("touchstart",event=>{if(event.touches.length===1){startX=event.touches[0].clientX;startY=event.touches[0].clientY;}},{passive:true});view.addEventListener("touchend",event=>{if(!startX||!event.changedTouches.length)return;const dx=event.changedTouches[0].clientX-startX,dy=event.changedTouches[0].clientY-startY;startX=0;if(Math.abs(dx)<65||Math.abs(dx)<Math.abs(dy)*1.25||event.target.closest("input,textarea,select,button,dialog"))return;const index=sheetPageOrder.indexOf(currentSheetPage),next=dx<0?Math.min(sheetPageOrder.length-1,index+1):Math.max(0,index-1);if(next!==index)showSheetPage(sheetPageOrder[next]);},{passive:true});}
 function setupIdentityOptions(){
@@ -138,11 +138,11 @@ function setEditMode(value){
   editMode=Boolean(value); document.body.classList.toggle("edit-mode",editMode);
   $("#edit-mode-banner").hidden=!editMode; $("#mode-status").textContent=editMode?"Edit mode · Make changes, then Save Character to return to Play mode.":"Play mode · Character fields are locked.";
   $("#edit-character").hidden=editMode; $("#save-button").hidden=!editMode; $("#dice-overlay-button").disabled=editMode; $(".combat-panel").inert=editMode;
-  const combatTab=document.querySelector('[data-page="combat"]'); if(combatTab)combatTab.disabled=editMode;
+
   document.querySelectorAll("[data-stat], #identity-form input, #identity-form textarea, #identity-form button").forEach(node=>node.disabled=!editMode);
   document.querySelectorAll("[data-current]").forEach(node=>node.disabled=editMode);
   document.querySelectorAll("[data-sheet-roll], .entry-roll").forEach(node=>node.disabled=editMode);
-  $("#profile-button").hidden=!editMode; $("#add-entry").hidden=!editMode; $("#edit-entry-detail").hidden=!editMode;
+  $("#profile-button").hidden=!editMode; document.querySelectorAll("[data-add-entry]").forEach(node=>node.hidden=!editMode); $("#edit-entry-detail").hidden=!editMode;
 }
 function beginEdit(){ if(!current||editMode)return; editSnapshot=structuredClone(current); setEditMode(true); renderSheet(); showSheetPage("options"); }
 function characterPointTotal(character){ const p=character.points||{},earned=(character.sections?.disadvantages||[]).reduce((sum,item)=>sum+(Number(item.mechanics?.cost)||0),0); return Number(p.base||0)+Math.min(earned,Number(p.disadvantages||0)||earned)+Number(p.experience||0); }
@@ -246,16 +246,15 @@ function renderEntries() {
     ([, entries]) => entries.length,
   );
   const total = groups.reduce((sum, [, entries]) => sum + entries.length, 0);
-  $("#abilities-panel").hidden = !total && Boolean(current.preservedHdc) && !editMode;
   $("#ability-count").textContent = total
     ? `${total} ${current.preservedHdc ? "imported " : ""}items`
     : "No Skills, Perks, Talents, Martial Arts, Powers, Disadvantages, or Equipment yet";
-  $("#ability-sections").innerHTML = groups
-    .map(
-      ([key, entries]) =>
-        `<details><summary>${labels[key] || key} <span>${entries.length}</span></summary><div class="entry-list">${entries.map((entry) => `<button class="entry" data-entry-section="${key}" data-entry-id="${escapeHtml(entry.id)}"><strong>${escapeHtml(entry.name || entry.alias || "Unnamed " + (labels[key] || "item"))}</strong><small>${escapeHtml([entry.alias !== entry.name ? entry.alias : "", entry.option, entry.mechanics ? entryMechanicsSummary(key, entry) : ""].filter(Boolean).join(" · "))}</small></button>`).join("")}</div></details>`,
-    )
-    .join("");
+  const groupMarkup = selected => groups.filter(([key])=>selected.includes(key)).map(([key, entries]) =>
+    `<details><summary>${labels[key] || key} <span>${entries.length}</span></summary><div class="entry-list">${entries.map((entry) => `<button class="entry" data-entry-section="${key}" data-entry-id="${escapeHtml(entry.id)}"><strong>${escapeHtml(entry.name || entry.alias || "Unnamed " + (labels[key] || "item"))}</strong><small>${escapeHtml([entry.alias !== entry.name ? entry.alias : "", entry.option, entry.mechanics ? entryMechanicsSummary(key, entry) : ""].filter(Boolean).join(" · "))}</small></button>`).join("")}</div></details>`).join("");
+  $("#skills-sections").innerHTML=groupMarkup(["skills","martialarts"]);
+  $("#talents-sections").innerHTML=groupMarkup(["talents","perks"]);
+  $("#powers-sections").innerHTML=groupMarkup(["powers","framework","equipment"]);
+  $("#disadvantages-sections").innerHTML=groupMarkup(["disadvantages"]);
   document.querySelectorAll("[data-entry-id]").forEach((node) => {
     node.addEventListener("click", () => openEntryDetails(node.dataset.entrySection, node.dataset.entryId));
     const section=node.dataset.entrySection,entry=findEntry(section,node.dataset.entryId),target=entry?.mechanics?.roll,actions=[];
@@ -272,7 +271,7 @@ function renderEntries() {
     }
   });
   $("#export-hdc").hidden = false;
-  $("#add-entry").hidden = !editMode;
+  document.querySelectorAll("[data-add-entry]").forEach(node=>node.hidden=!editMode);
 }
 function renderProfile() {
   syncFrameworkCosts();
@@ -421,7 +420,7 @@ function renderCombat() {
   $("#combat-status").textContent =
     `Turn ${turn} · Segment ${segment} · ${hasPhase(spd, segment) ? "Your Phase" : "No Phase"}`;
   const speedMarkup = Array.from({ length: 12 }, (_, i) => i + 1).map((value) => `<button data-segment="${value}" class="${value === segment ? "current " : ""}${phases.includes(value) ? "phase" : ""}" aria-label="Segment ${value}${phases.includes(value) ? ", Phase" : ""}"><span>${value}</span>${phases.includes(value) ? "<small>Phase</small>" : ""}</button>`).join("");
-  $("#speed-chart").innerHTML = speedMarkup; $("#play-speed-chart").innerHTML = speedMarkup; $("#play-combat-status").textContent = `SPD ${spd} · Phases ${phases.join(", ")}`;
+  $("#speed-chart").innerHTML = speedMarkup; $("#play-speed-chart").innerHTML = speedMarkup; $("#play-combat-status").textContent = `SPD ${spd} · Phases ${phases.join(", ")}`; $("#header-phases strong").textContent=phases.join(", ");
   const labels = phase.log.map((id) => ACTION_TIMING_4E[id]?.label || id),lastAction=ACTION_TIMING_4E[phase.log.at(-1)],maneuverDetails=lastAction?.effect?[`OCV ${lastAction.ocv}`,`DCV ${lastAction.dcv}`,lastAction.effect].join(" · "):"";
   $("#phase-status").textContent = (phase.held
     ? "Held Action saved"
@@ -470,7 +469,7 @@ function renderCombat() {
 }
 function refreshResources() {
   document.querySelectorAll("[data-current]").forEach((node) => { node.value = current.current[node.dataset.current]; });
-  if(current) $("#header-resources").innerHTML=["BODY","STUN","END"].map(key=>`<span><b>${key}</b><strong>${current.current[key]}</strong><small>/${current.characteristics[key]}</small></span>`).join("");
+  if(current){const host=$("#header-resources"),keys=["STUN","END","BODY"];if(host.children.length!==keys.length)host.innerHTML=keys.map(key=>`<label><b>${key}</b><input inputmode="text" enterkeyhint="done" data-current="${key}" value="${current.current[key]}" ${editMode ? "disabled" : ""}><small>/${current.characteristics[key]}</small></label>`).join("");host.querySelectorAll("[data-current]").forEach(node=>{node.value=current.current[node.dataset.current];node.disabled=editMode;});}
 }
 function renderPortraits() {
   const markup = current.portrait?.dataUrl
@@ -529,7 +528,9 @@ function renderDerived() {
   $("#characteristic-cost").textContent =
     `${totalCharacteristicCost(c)} characteristic & movement points`;
   const statCards = (rows,rolls=false) => rows.map(([k, v]) => rolls ? `<button type="button" class="stat read rollable-stat" data-sheet-roll="${String(v).replace("-","")}" data-roll-label="${k}"><span>${k}</span><strong>${v}</strong></button>` : `<div class="stat read"><span>${k}</span><strong>${v}</strong></div>`).join("");
-  $("#header-pd strong").textContent=Number(c.PD||0); $("#header-ed strong").textContent=Number(c.ED||0);
+  const headerDefenses=characterDefenses(), mentalDefense=(current.sections?.powers||[]).filter(power=>power.mechanics?.key==="mentalDefense").reduce((sum,power)=>sum+Number(power.mechanics?.levels||0),0);
+  const headerCombat=[["#header-ocv",combatValue(c.DEX)],["#header-dcv",combatValue(c.DEX)],["#header-ecv",combatValue(c.EGO)]]; for(const [selector,value] of headerCombat){const output=$(selector);output.textContent=value;output.closest("[data-combat-roll]").dataset.combatRoll=value;}
+  $("#header-pd strong").textContent=`${headerDefenses.physical.total} / ${headerDefenses.physical.resistant}`; $("#header-ed strong").textContent=`${headerDefenses.energy.total} / ${headerDefenses.energy.resistant}`; $("#header-ego-defense strong").textContent=mentalDefense;
   $("#combat-values").innerHTML = [["OCV",combatValue(c.DEX),"DCV"],["DCV",combatValue(c.DEX),"OCV"],["ECV",combatValue(c.EGO),"ECV"]].map(([label,value,defense])=>`<button type="button" class="stat read rollable-stat" data-combat-roll="${value}" data-roll-label="${label}" data-defense-label="${defense}"><span>${label}</span><strong>${value}</strong></button>`).join("");
   const roll = value => `${characteristicRollTarget(value)}-`;
   $("#characteristic-rolls").innerHTML = statCards([
@@ -565,7 +566,7 @@ function updateStat(event) {
     current.characteristics[key] = previous;
   renderDerived();
 }
-function openCharacter(id) { currentSheetPage="play"; current=normalizeCharacter(getCharacter(id)); isDraft=false; editSnapshot=null; setEditMode(false); renderSheet(); show("sheet-view"); }
+function openCharacter(id) { currentSheetPage="characteristics"; current=normalizeCharacter(getCharacter(id)); isDraft=false; editSnapshot=null; setEditMode(false); renderSheet(); show("sheet-view"); }
 function createCharacter() { currentSheetPage="options"; current=normalizeCharacter({name:"New Hero"}); isDraft=true; editSnapshot=null; setEditMode(true); renderSheet(); show("sheet-view"); showSheetPage("options"); toast("New character is not saved yet"); }
 function backupRoster() {
   const data = {
@@ -1250,7 +1251,7 @@ $("#entry-form").addEventListener("submit", () => {
   syncFrameworkCosts(); renderEntries(); renderProfile();
 });
 
-$("#add-entry").addEventListener("click", () => {
+function openNewEntry(defaultSection="skills") {
   $("#entry-dialog").dataset.mode = "new";
   $("#entry-section-label").hidden = false;
   $("#entry-category-heading").textContent = "Character creation";
@@ -1286,6 +1287,7 @@ $("#add-entry").addEventListener("click", () => {
   $("#framework-points").value = 20;
   $("#framework-advantages").value = 0;
   $("#framework-limitations").value = 0;
+  $("#entry-new-section").value=defaultSection;
   refreshFrameworkChoices();
   updateSpecialBuilder();
   updatePowerBuilder();
@@ -1295,7 +1297,8 @@ $("#add-entry").addEventListener("click", () => {
   updateEquipmentBuilder();
   updateMartialBuilder();
   $("#entry-dialog").showModal();
-});
+}
+document.querySelectorAll("[data-add-entry]").forEach(node=>node.addEventListener("click",()=>openNewEntry(node.dataset.addEntry)));
 $("#cancel-entry").addEventListener("click", () => $("#entry-dialog").close());
 $("#export-json").addEventListener("click", exportJson);
 $("#export-foundry").addEventListener("click", exportFoundry);
@@ -1443,13 +1446,13 @@ $("#new-character").addEventListener("click", createCharacter);
 $("#new-character-shortcut").addEventListener("click", createCharacter);
 $("#character-search").addEventListener("input", renderLibrary);
 $("#back-button").addEventListener("click",()=>{ if(editMode){current=isDraft?null:normalizeCharacter(editSnapshot);isDraft=false;editSnapshot=null;setEditMode(false);} renderLibrary();show("library-view"); });
-$("#save-button").addEventListener("click",()=>{ current.name=$("#identity-name").value.trim()||current.name;current.playerName=$("#identity-player").value.trim();current.updatedAt=new Date().toISOString();saveCharacter(current);isDraft=false;editSnapshot=null;setEditMode(false);currentSheetPage="play";renderSheet();showSheetPage("play");renderLibrary();toast("Character saved · Play mode"); });
+$("#save-button").addEventListener("click",()=>{ current.name=$("#identity-name").value.trim()||current.name;current.playerName=$("#identity-player").value.trim();current.updatedAt=new Date().toISOString();saveCharacter(current);isDraft=false;editSnapshot=null;setEditMode(false);currentSheetPage="characteristics";renderSheet();showSheetPage("characteristics");renderLibrary();toast("Character saved · Play mode"); });
 $("#json-input").addEventListener("change", async (event) => {
   try {
     const file = event.target.files[0];
     if (!file) return;
     current = importCharacterJson(await file.text());
-    isDraft=false;editSnapshot=null;setEditMode(false);currentSheetPage="play";
+    isDraft=false;editSnapshot=null;setEditMode(false);currentSheetPage="characteristics";
     saveCharacter(current);
     renderLibrary();
     renderSheet();
@@ -1466,7 +1469,7 @@ $("#hdc-input").addEventListener("change", async (event) => {
     const file = event.target.files[0];
     if (!file) return;
     current = importHdc(await file.text());
-    isDraft=false;editSnapshot=null;setEditMode(false);currentSheetPage="play";
+    isDraft=false;editSnapshot=null;setEditMode(false);currentSheetPage="characteristics";
     saveCharacter(current);
     renderLibrary();
     renderSheet();
@@ -1490,7 +1493,7 @@ $("#sample-character").addEventListener("click", async (event) => {
     if (!response.ok)
       throw new Error(`Sample download failed (${response.status})`);
     current = importHdc(await response.text());
-    isDraft=false;editSnapshot=null;setEditMode(false);currentSheetPage="play";
+    isDraft=false;editSnapshot=null;setEditMode(false);currentSheetPage="characteristics";
     saveCharacter(current);
     renderLibrary();
     renderSheet();
@@ -1571,7 +1574,7 @@ diceTray.bind();document.querySelectorAll("[data-nav]").forEach((button) =>
 );
 $("#sheet-menu-button").addEventListener("click",()=>setSheetMenu(!$("#sheet-page-menu").classList.contains("open")));
 $("#header-options").addEventListener("click",()=>showSheetPage("options"));
-$("#header-conditions").addEventListener("click",()=>showSheetPage("combat"));
+$("#header-conditions").addEventListener("click",()=>{showSheetPage("characteristics");requestAnimationFrame(()=>$(".combat-panel")?.scrollIntoView({block:"start"}));});
 document.querySelectorAll("[data-jump]").forEach((button) => button.addEventListener("click", () => showSheetPage(button.dataset.page)));
 if ("serviceWorker" in navigator) {
   let reloading=false;
