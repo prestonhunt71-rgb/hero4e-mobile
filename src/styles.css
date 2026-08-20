@@ -1249,3 +1249,19 @@ body,#sheet-view.active{background:#0d1418}
 .sheet-menu-button,.sheet-jump>strong,.page-view-icons{background:transparent!important}
 .sheet-page-scroll>.panel{background:#0d1418;border-bottom-color:#26343c}
 .entry-sections details>summary,.entry{background:#17242c!important}.stat{background:#16242d!important;border-color:#334650!important}
+
+/* v63: proportioned character dashboard requested from the Beyond reference. */
+.sheet-app-bar{display:contents}
+.sheet-heading{display:block;padding:8px 0;background:#202d36;border:0;box-shadow:none}
+.sheet-hero-summary{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;width:calc(100% - 20px);max-width:430px;margin:0 auto;padding:0}
+.sheet-hero-summary .sheet-portrait{grid-column:2;grid-row:1;width:100%;height:auto;aspect-ratio:3/4;align-self:center;object-fit:cover;object-position:center;border:2px solid #465b68}
+.header-cv-stack{grid-column:1}.header-defense-stack{grid-column:3}
+.header-cv-stack>button,.header-defense-stack>div{min-height:0;padding:5px 7px;background:#080d10;border-color:#34434c}
+.header-cv-stack span,.header-defense-stack span{font-size:.64rem}.header-cv-stack strong,.header-defense-stack strong{font-size:1.06rem}
+.header-core-stats{margin-top:8px}.header-core-stats>div,.header-resources>label{min-height:52px;background:#080d10}
+.header-core-stats span,.header-resources>label b{font-size:.62rem}.header-core-stats strong,.header-resources>label input{font-size:1.15rem}
+.header-core-stats small{font-size:.65rem;right:22%;bottom:8px}
+.header-phases{display:none}
+.header-resources{margin-top:6px;border-top:6px solid #07090b}.header-resources>label small{font-size:.58rem}
+.sheet-header-actions{margin-top:7px;margin-bottom:0}.sheet-header-actions .header-tool{background:#080d10;border-color:#34434c;font-size:1rem}
+@media(max-width:430px){.sheet-hero-summary{grid-template-columns:repeat(3,minmax(0,1fr))}.sheet-hero-summary .sheet-portrait{width:100%;height:auto}.header-cv-stack>button,.header-defense-stack>div{min-height:0}.header-core-stats>div,.header-resources>label{min-height:48px}}

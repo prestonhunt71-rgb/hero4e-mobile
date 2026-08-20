@@ -86,18 +86,19 @@
       </section>
 
       <section id="sheet-view" class="view">
-        <header class="sheet-heading">
+        <header class="sheet-app-bar">
           <div class="sheet-title-row">
             <button id="back-button" class="icon-button" aria-label="Back to characters">&lsaquo;</button>
 
             <button id="identity-button" class="identity-heading"><h2 id="character-name">Hero</h2><small id="player-name"></small></button>
           </div>
+        </header><header class="sheet-heading">
           <div class="sheet-hero-summary">
             <div class="header-cv-stack" aria-label="Combat Values"><button type="button" data-combat-roll="3" data-roll-label="OCV" data-defense-label="DCV"><span>OCV</span><strong id="header-ocv">3</strong></button><button type="button" data-combat-roll="3" data-roll-label="DCV" data-defense-label="OCV"><span>DCV</span><strong id="header-dcv">3</strong></button><button type="button" data-combat-roll="3" data-roll-label="ECV" data-defense-label="ECV"><span>ECV</span><strong id="header-ecv">3</strong></button></div>
             <button id="sheet-portrait" class="sheet-portrait" type="button" aria-label="View character art"><span>H</span></button>
             <div class="header-defense-stack" aria-label="Defenses"><div id="header-pd"><span>PD / rPD</span><strong>2 / 0</strong></div><div id="header-ed"><span>ED / rED</span><strong>2 / 0</strong></div><div id="header-ego-defense"><span>EGO Defense</span><strong>0</strong></div></div>
           </div>
-          <div class="header-core-stats" aria-label="Core play values"><div><span>SPD</span><strong id="header-spd">2</strong></div><div><span>DEX</span><strong id="header-dex">10</strong></div><div><span>MOVE</span><strong id="header-move">6</strong><small>″</small></div></div>
+          <div class="header-core-stats" aria-label="Core play values"><div><span>SPD</span><strong id="header-spd">2</strong></div><div><span>DEX</span><strong id="header-dex">10</strong></div><div><span>RUN</span><strong id="header-move">6</strong><small>″</small></div></div>
           <div id="header-phases" class="header-phases" aria-label="Speed phases"><span>Phases</span><strong>6, 12</strong></div>
           <div id="header-resources" class="header-resources" aria-label="Current STUN END and BODY"></div>
           <div class="sheet-header-actions"><button id="header-options" class="header-tool" type="button" aria-label="Open character options"><span aria-hidden="true">⚙</span><b>Options</b></button><button id="header-conditions" class="header-tool" type="button"><b>Conditions</b></button></div>
