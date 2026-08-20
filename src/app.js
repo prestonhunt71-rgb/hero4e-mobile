@@ -114,7 +114,7 @@ const sheetPageOrder = ["actions", "characteristics", "skills", "talents", "mart
 const sheetPageLabels = {actions:"Actions",characteristics:"Characteristics",skills:"Skills",talents:"Talents / Perks",martialarts:"Martial Arts",powers:"Powers",disadvantages:"Disadvantages",background:"Background",art:"Character Art",math:"Balance Sheet",options:"Options",play:"Play"};
 function setupSheetPages() {
   const groups = {
-    actions: [$(".character-actions-panel")], play: [$(".play-speed-panel"), $(".combat-values-panel"), $(".defenses-panel"), $(".combat-panel")],
+    actions: [$(".character-actions-panel")], play: [$(".play-speed-panel"), $(".combat-panel")],
     characteristics: [$("#movement")?.closest(".panel"), $(".characteristics-rolls-panel"), $(".characteristics-panel")],
     skills: [$("#skills-panel")], talents: [$("#talents-panel")], martialarts: [$("#martial-panel")], powers: [$("#powers-panel")], disadvantages: [$("#disadvantages-panel")],
     background: [$("#profile-panel")], art: [$("#art-page-panel")], math: [$("#point-grid")?.closest(".panel"), $("#math-panel")], options: [$("#options-panel")],

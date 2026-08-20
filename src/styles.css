@@ -1281,3 +1281,5 @@ body:has(#sheet-view.active) .app-bottom-nav{display:grid}
 /* v65: center the complete five-item navigation within the phone viewport. */
 .app-bottom-nav{transform:translateX(-50%)}
 .floating-dice{right:max(20px,calc((100vw - min(540px,calc(100vw - 28px)))/2 + 10px))}
+/* v66: combat values and defenses already live in the persistent dashboard. */
+.combat-values-panel,.defenses-panel{display:none!important}
