@@ -1209,3 +1209,22 @@ body{background:#07090b;color:#e8ecee;font-family:"Arial Narrow","Roboto Condens
 .sheet-title-row .icon-button{position:static;grid-column:1;align-self:center}.sheet-title-row .sheet-portrait{grid-column:2;grid-row:1;width:62px;height:62px;align-self:center;border:1px solid #3b454b}.sheet-title-row .identity-heading{grid-column:3;text-align:left!important;min-width:0}.sheet-title-row .identity-heading h2,.sheet-title-row .identity-heading small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sheet-header-actions{left:auto;top:calc(11px + env(safe-area-inset-top));width:72px;display:grid;grid-template-columns:1fr;gap:3px}.sheet-header-actions .header-tool{height:26px;width:72px;justify-content:center}
 .sheet-hero-summary{grid-template-columns:1fr 1.35fr;gap:5px;margin-top:5px}.header-cv-stack{grid-column:1}.header-defense-stack{grid-column:2}.sheet-hero-summary .sheet-portrait{display:none}
 @media(max-width:430px){.sheet-title-row{grid-template-columns:30px 58px minmax(0,1fr);gap:7px;padding-right:70px}.sheet-title-row .sheet-portrait{width:58px;height:58px}.sheet-header-actions{width:66px}.sheet-header-actions .header-tool{width:66px}}
+/* v61: iPhone viewport and compact-page layout corrections. */
+body:has(#sheet-view.active){position:fixed;inset:0;width:100%;height:100dvh;margin:0;overflow:hidden}
+main:has(#sheet-view.active){width:100%;height:100dvh;margin:0;padding:0}
+#sheet-view.active{position:absolute;inset:0;width:100%;height:100dvh;min-height:0;margin:0;overflow:hidden}
+.sheet-heading{padding-top:max(7px,env(safe-area-inset-top))}
+.sheet-page-scroll{min-height:0;padding-top:8px;scroll-padding-top:8px}
+.sheet-page-scroll>.panel{width:100%;height:auto;min-height:0;margin:0;overflow:visible}
+.entry-sections details>summary{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;list-style:none}
+.entry-sections details>summary::-webkit-details-marker{display:none}
+.entry-sections details>summary::before{content:"\25B8";flex:0 0 auto;color:#d33a41;font-size:.8rem}
+.entry-sections details[open]>summary::before{content:"\25BE"}
+.entry-sections details>summary span{margin-left:auto}
+.entry-sections details[open]>.entry-list{padding-bottom:2px}
+@media(max-width:430px){.sheet-heading{padding-left:8px;padding-right:8px;padding-bottom:5px}.sheet-title-row{min-height:62px}.sheet-title-row .sheet-portrait{width:54px;height:54px}.sheet-hero-summary{margin-top:3px}.header-cv-stack>button,.header-defense-stack>div{min-height:23px}.header-core-stats>div,.header-resources>label{min-height:38px}.header-phases{margin-top:3px;padding-block:2px}.sheet-jump{padding-bottom:2px}.sheet-menu-button,.sheet-jump>strong,.page-view-icons{height:36px}.sheet-page-scroll{padding-top:6px}}
+.sheet-page-scroll button,.sheet-page-scroll input,.sheet-page-scroll summary{scroll-margin-top:44px}
+#sheet-view.active:has(#edit-mode-banner[hidden]){grid-template-rows:auto auto minmax(0,1fr)}
+#sheet-view.active:not(:has(#edit-mode-banner[hidden])){grid-template-rows:auto auto auto minmax(0,1fr)}
+.sheet-jump{pointer-events:none}
+.sheet-menu-button,.sheet-page-menu,.sheet-page-menu button{pointer-events:auto}
