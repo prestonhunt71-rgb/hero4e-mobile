@@ -113,7 +113,7 @@ function toast(message) {
   setTimeout(() => node.classList.remove("show"), 2200);
 }
 const workspacePageOrder = {
-  character:["characteristics","skills","talents","martialarts","powers","disadvantages","background","art","math"],
+  character:["characteristics","skills","talents","martialarts","powers","disadvantages","background","art","math","manage"],
   play:["actions","characteristics","skills","talents","martialarts","powers","disadvantages"],
 };
 const sheetPageLabels = {actions:"Actions",characteristics:"Characteristics",skills:"Skills",talents:"Talents / Perks",martialarts:"Martial Arts",powers:"Powers",disadvantages:"Disadvantages",background:"Background",art:"Character Art",math:"Balance Sheet",manage:"Manage Character"};
@@ -180,8 +180,10 @@ function setupIdentityOptions(){
 }
 function setEditMode(value){
   editMode=Boolean(value); document.body.classList.toggle("edit-mode",editMode);
-  $("#edit-mode-banner").hidden=!editMode; $("#mode-status").textContent=editMode?"Edit mode · Make changes, then Save Character to lock the character.":"Character locked · Choose Edit Character to make changes.";
-  $("#edit-character").hidden=editMode; $("#save-button").hidden=!editMode; $("#dice-overlay-button").disabled=editMode; $(".combat-panel").inert=editMode;
+  $("#edit-mode-banner").hidden=!editMode; $("#mode-status").textContent=editMode?"Edit mode · Make changes, then Save to lock the character.":"Character locked · Choose Edit to make changes.";
+  $("#header-options b").textContent=editMode?"Save":"Edit";
+  $("#header-options").setAttribute("aria-label",editMode?"Save character":"Edit character");
+  $("#dice-overlay-button").disabled=editMode; $(".combat-panel").inert=editMode;
 
   document.querySelectorAll("[data-stat], #identity-form input, #identity-form textarea, #identity-form button").forEach(node=>node.disabled=!editMode);
   document.querySelectorAll("[data-current]").forEach(node=>node.disabled=editMode);
@@ -208,13 +210,21 @@ function characterIsComplete(character){
 }
 function updatePlayAvailability(){
   const button=$("[data-app-mode='play']"),balance=current?characterBalance(current):null;
-  const complete=characterIsComplete(current),eligible=Boolean(current&&!isDraft&&!editMode&&complete&&balance?.available>0&&balance.remaining===0);
+  const complete=characterIsComplete(current),eligible=Boolean(current&&!isDraft&&!editMode&&complete&&balance?.available>0&&balance.remaining>=0);
   button.disabled=!eligible;
   button.setAttribute("aria-disabled",String(!eligible));
-  button.title=eligible?"Open Play":!current?"Choose a character first":editMode||isDraft?"Save and lock the character first":!complete?"Complete the character before entering Play":balance?.available<=0?"Set the character's point allowance":"Balance the character before entering Play";
+  button.title=eligible?"Open Play":!current?"Choose a character first":editMode||isDraft?"Save and lock the character first":!complete?"Complete the character before entering Play":balance?.available<=0?"Set the character's point allowance":"The character is overspent";
   return eligible;
 }
 function beginEdit(){ if(!current||editMode||currentWorkspace!=="character")return; editSnapshot=structuredClone(current); setEditMode(true); renderSheet(); showSheetPage("manage"); }
+function saveAndLockCharacter(){
+  if(!current||!editMode)return;
+  current.name=$("#identity-name").value.trim()||current.name;
+  current.playerName=$("#identity-player").value.trim();
+  current.updatedAt=new Date().toISOString();
+  saveCharacter(current);isDraft=false;editSnapshot=null;setEditMode(false);
+  currentWorkspace="character";currentSheetPage="characteristics";renderSheet();showSheetPage("characteristics");renderLibrary();toast("Character saved and locked");
+}
 function characterPointTotal(character){ const p=character.points||{},earned=(character.sections?.disadvantages||[]).reduce((sum,item)=>sum+(Number(item.mechanics?.cost)||0),0); return Number(p.base||0)+Math.min(earned,Number(p.disadvantages||0)||earned)+Number(p.experience||0); }
 function renderLibrary() {
   const query = $("#character-search")?.value.trim().toLowerCase() || "",
@@ -319,8 +329,8 @@ function renderEntries() {
   $("#ability-count").textContent = total
     ? `${total} ${current.preservedHdc ? "imported " : ""}items`
     : "No Skills, Perks, Talents, Martial Arts, Powers, Disadvantages, or Equipment yet";
-  const groupMarkup = selected => groups.filter(([key])=>selected.includes(key)).map(([key, entries]) =>
-    `<details><summary>${labels[key] || key} <span>${entries.length}</span></summary><div class="entry-list">${entries.map((entry) => `<button class="entry" data-entry-section="${key}" data-entry-id="${escapeHtml(entry.id)}"><strong>${escapeHtml(entry.name || entry.alias || "Unnamed " + (labels[key] || "item"))}</strong><small>${escapeHtml([entry.alias !== entry.name ? entry.alias : "", entry.option, entry.mechanics ? entryMechanicsSummary(key, entry) : ""].filter(Boolean).join(" · "))}</small></button>`).join("")}</div></details>`).join("");
+  const groupMarkup = selected => { const visible=groups.filter(([key])=>selected.includes(key)); return visible.map(([key, entries]) =>
+    `<section class="entry-group">${visible.length>1?`<h4>${labels[key] || key} <span>${entries.length}</span></h4>`:""}<div class="entry-list">${entries.map((entry) => `<button class="entry" data-entry-section="${key}" data-entry-id="${escapeHtml(entry.id)}"><strong>${escapeHtml(entry.name || entry.alias || "Unnamed " + (labels[key] || "item"))}</strong><small>${escapeHtml([entry.alias !== entry.name ? entry.alias : "", entry.option, entry.mechanics ? entryMechanicsSummary(key, entry) : ""].filter(Boolean).join(" · "))}</small></button>`).join("")}</div></section>`).join(""); };
   $("#skills-sections").innerHTML=groupMarkup(["skills"]);
   $("#martial-sections").innerHTML=groupMarkup(["martialarts"]);
   $("#talents-sections").innerHTML=groupMarkup(["talents","perks"]);
@@ -898,6 +908,8 @@ $("#move-entry-down").addEventListener("click", () => moveEntry(1));
 $("#delete-entry").addEventListener("click", () => {
   const section = $("#entry-section").value;
   const deletedId = $("#entry-id").value;
+  const entry=findEntry(section,deletedId);
+  if(!entry||!confirm(`Delete ${entry.name||entry.alias||"this entry"}? Its points will be removed from the character total.`))return;
   current.sections[section] = (current.sections?.[section] || []).filter(
     (e) => String(e.id) !== String(deletedId),
   );
@@ -913,7 +925,7 @@ $("#delete-entry").addEventListener("click", () => {
   $("#entry-dialog").close();
   renderEntries();
   renderProfile();
-  toast("Ability removed — export creates updated HDC");
+  toast("Entry removed and character points recalculated");
 });
 function updateEquipmentBuilder() {
   const visible = $("#entry-new-section").value === "equipment";
@@ -1363,7 +1375,6 @@ $("#close-art").addEventListener("click",()=>$("#art-dialog").close());
 $("#art-zoom-in").addEventListener("click",()=>{artZoom=Math.min(4,artZoom+.25);updateArtZoom();});
 $("#art-zoom-out").addEventListener("click",()=>{artZoom=Math.max(.5,artZoom-.25);updateArtZoom();});
 $("#art-zoom-reset").addEventListener("click",()=>{artZoom=1;updateArtZoom();});
-$("#edit-character").addEventListener("click",beginEdit);
 $("#profile-button").addEventListener("click", () => {
   if(currentWorkspace!=="character"||!editMode)return;
   for (const key of [
@@ -1497,7 +1508,6 @@ $("#new-character").addEventListener("click", createCharacter);
 $("#new-character-shortcut").addEventListener("click", createCharacter);
 $("#character-search").addEventListener("input", renderLibrary);
 $("#back-button").addEventListener("click",()=>{ if(editMode){current=isDraft?null:normalizeCharacter(editSnapshot);isDraft=false;editSnapshot=null;setEditMode(false);} renderLibrary();show("library-view"); });
-$("#save-button").addEventListener("click",()=>{ current.name=$("#identity-name").value.trim()||current.name;current.playerName=$("#identity-player").value.trim();current.updatedAt=new Date().toISOString();saveCharacter(current);isDraft=false;editSnapshot=null;setEditMode(false);currentWorkspace="character";currentSheetPage="characteristics";renderSheet();showSheetPage("characteristics");renderLibrary();toast("Character saved and locked"); });
 $("#json-input").addEventListener("change", async (event) => {
   try {
     const file = event.target.files[0];
@@ -1508,7 +1518,7 @@ $("#json-input").addEventListener("change", async (event) => {
     renderLibrary();
     renderSheet();
     show("sheet-view");
-    toast(`${current.name} imported`);
+    toast(`${current.name} imported${current.portrait?.dataUrl?` · character art loaded (${Math.round(current.portrait.bytes/1024)} KB)`:""}`);
   } catch (error) {
     toast(error.message);
   } finally {
@@ -1525,7 +1535,7 @@ $("#hdc-input").addEventListener("change", async (event) => {
     renderLibrary();
     renderSheet();
     show("sheet-view");
-    toast(`${current.name} imported`);
+    toast(`${current.name} imported${current.portrait?.dataUrl?` · embedded HDC art loaded (${Math.round(current.portrait.bytes/1024)} KB)`:" · no embedded HDC art found"}`);
   } catch (error) {
     toast(error.message);
   } finally {
@@ -1549,7 +1559,7 @@ $("#sample-character").addEventListener("click", async (event) => {
     renderLibrary();
     renderSheet();
     show("sheet-view");
-    toast("The Iron Wolf imported successfully");
+    toast(`The Iron Wolf imported successfully${current.portrait?.dataUrl?` · embedded art loaded (${Math.round(current.portrait.bytes/1024)} KB)`:" · no embedded art found"}`);
   } catch (error) {
     console.error(error);
     toast(`Import failed: ${error.message}`);
@@ -1624,7 +1634,7 @@ diceTray.bind();document.querySelectorAll("[data-nav]").forEach((button) =>
   }),
 );
 $("#sheet-menu-button").addEventListener("click",()=>setSheetMenu(!$("#sheet-page-menu").classList.contains("open")));
-$("#header-options").addEventListener("click",()=>{if(currentWorkspace==="character")showSheetPage("manage");});
+$("#header-options").addEventListener("click",()=>{if(currentWorkspace!=="character")return;if(editMode)saveAndLockCharacter();else beginEdit();});
 $("#header-conditions").addEventListener("click",()=>{if(currentWorkspace==="play"){showSheetPage("actions");requestAnimationFrame(()=>$(".combat-panel")?.scrollIntoView({block:"start"}));}});
 document.querySelectorAll("#sheet-page-menu [data-page]").forEach((button) => button.addEventListener("click", () => showSheetPage(button.dataset.page)));
 document.querySelectorAll("[data-app-mode]").forEach(button=>button.addEventListener("click",()=>openAppMode(button.dataset.appMode)));

@@ -101,14 +101,14 @@
           <div class="header-core-stats" aria-label="Core play values"><div><span>SPD</span><strong id="header-spd">2</strong></div><div><span>DEX</span><strong id="header-dex">10</strong></div><div><span>RUN</span><strong id="header-move">6</strong><small>″</small></div></div>
           <div id="header-phases" class="header-phases" aria-label="Speed phases"><span>Phases</span><strong>6, 12</strong></div>
           <div id="header-resources" class="header-resources" aria-label="Current STUN END and BODY"></div>
-          <div class="sheet-header-actions"><button id="header-options" class="header-tool" type="button" aria-label="Manage character"><span aria-hidden="true">⚙</span><b>Manage</b></button><button id="header-conditions" class="header-tool" type="button"><b>Conditions</b></button></div>
+          <div class="sheet-header-actions"><button id="header-options" class="header-tool" type="button" aria-label="Edit character"><span aria-hidden="true">✎</span><b>Edit</b></button><button id="header-conditions" class="header-tool" type="button"><b>Conditions</b></button></div>
         </header>        <div id="edit-mode-banner" class="edit-mode-banner" hidden>EDIT MODE · Dice and Combat are locked until you save.</div>
         <nav class="sheet-jump" aria-label="Character sheet sections">
           <button id="sheet-menu-button" class="sheet-menu-button" type="button" aria-label="Open character page menu" aria-expanded="false"><span aria-hidden="true">☰</span></button>
           <strong id="sheet-page-title">Actions</strong>
           <span class="page-view-icons" aria-hidden="true">▦ &nbsp;☷</span>
           <div id="sheet-page-menu" class="sheet-page-menu">
-            <button data-page="actions" data-workspace="play">Actions</button><button data-page="characteristics" data-workspace="character play">Characteristics</button><button data-page="skills" data-workspace="character play">Skills</button><button data-page="talents" data-workspace="character play">Talents / Perks</button><button data-page="martialarts" data-workspace="character play">Martial Arts</button><button data-page="powers" data-workspace="character play">Powers</button><button data-page="disadvantages" data-workspace="character play">Disadvantages</button><button data-page="background" data-workspace="character">Background</button><button data-page="art" data-workspace="character">Character Art</button><button data-page="math" data-workspace="character">Balance Sheet</button>
+            <button data-page="actions" data-workspace="play">Actions</button><button data-page="characteristics" data-workspace="character play">Characteristics</button><button data-page="skills" data-workspace="character play">Skills</button><button data-page="talents" data-workspace="character play">Talents / Perks</button><button data-page="martialarts" data-workspace="character play">Martial Arts</button><button data-page="powers" data-workspace="character play">Powers</button><button data-page="disadvantages" data-workspace="character play">Disadvantages</button><button data-page="background" data-workspace="character">Background</button><button data-page="art" data-workspace="character">Character Art</button><button data-page="math" data-workspace="character">Balance Sheet</button><button data-page="manage" data-workspace="character">Options</button>
           </div>
         </nav>
         <div class="sheet-page-scroll">
@@ -160,19 +160,19 @@
           <div id="defense-values" class="defense-grid"></div>
         </section>
         <section class="panel entry-page" id="skills-panel">
-          <div class="panel-title"><h3>Skills</h3><button id="add-entry" data-add-entry="skills" class="mini" hidden>Add</button></div><div id="skills-sections" class="entry-sections"></div>
+          <button id="add-entry" data-add-entry="skills" class="mini page-add" hidden>Add Skill</button><div id="skills-sections" class="entry-sections"></div>
         </section>
         <section class="panel entry-page" id="talents-panel">
-          <div class="panel-title"><h3>Talents &amp; Perks</h3><button data-add-entry="talents" class="mini" hidden>Add</button></div><div id="talents-sections" class="entry-sections"></div>
+          <button data-add-entry="talents" class="mini page-add" hidden>Add Talent or Perk</button><div id="talents-sections" class="entry-sections"></div>
         </section>
         <section class="panel entry-page" id="martial-panel">
-          <div class="panel-title"><h3>Martial Arts</h3><button data-add-entry="martialarts" class="mini" hidden>Add</button></div><div id="martial-sections" class="entry-sections"></div>
+          <button data-add-entry="martialarts" class="mini page-add" hidden>Add Maneuver</button><div id="martial-sections" class="entry-sections"></div>
         </section>
         <section class="panel entry-page" id="powers-panel">
-          <div class="panel-title"><h3>Powers</h3><div><span id="ability-count"></span><button data-add-entry="powers" class="mini" hidden>Add</button></div></div><div id="powers-sections" class="entry-sections"></div>
+          <div class="page-entry-actions"><span id="ability-count"></span><button data-add-entry="powers" class="mini page-add" hidden>Add Power</button></div><div id="powers-sections" class="entry-sections"></div>
         </section>
         <section class="panel entry-page" id="disadvantages-panel">
-          <div class="panel-title"><h3>Disadvantages</h3><button data-add-entry="disadvantages" class="mini" hidden>Add</button></div><div id="disadvantages-sections" class="entry-sections"></div>
+          <button data-add-entry="disadvantages" class="mini page-add" hidden>Add Disadvantage</button><div id="disadvantages-sections" class="entry-sections"></div>
         </section>
         <section class="panel combat-panel">
           <div class="panel-title">
@@ -251,9 +251,7 @@
           <div id="math-summary" class="math-summary"></div>
         </section>        <section class="panel" id="options-panel">
           <div class="panel-title"><h3>Manage Character</h3></div>
-          <button id="edit-character" class="primary edit-character-button" type="button">Edit Character</button>
           <p id="mode-status" class="mode-status">Play mode · Character fields are locked.</p>
-          <button id="save-button" class="primary options-save" type="button" hidden>Save Character</button>
           <div class="options-actions">
             <button id="export-json" class="quiet">Export HERO4E</button>
             <button id="export-foundry" class="quiet">Export Foundry</button>
