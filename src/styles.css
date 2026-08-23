@@ -1283,3 +1283,15 @@ body:has(#sheet-view.active) .app-bottom-nav{display:grid}
 .floating-dice{right:max(20px,calc((100vw - min(540px,calc(100vw - 28px)))/2 + 10px))}
 /* v66: combat values and defenses already live in the persistent dashboard. */
 .combat-values-panel,.defenses-panel{display:none!important}
+/* v67: Character builds; Play operates; More is an independent app workspace. */
+.app-bottom-nav{grid-template-columns:repeat(4,minmax(0,1fr))}
+body[data-workspace="character"] .characteristics-rolls-panel,body[data-workspace="play"] .characteristics-panel,body[data-workspace="play"] .movement-panel,.character-actions-panel,#resources{display:none!important}
+body:not([data-workspace="play"]) .floating-dice{display:none!important}
+body[data-workspace="character"] .header-cv-stack button{cursor:default;opacity:1}
+.header-resource-maximum{position:relative;display:grid;grid-template-areas:"label" "value";place-items:center;min-height:52px;padding:4px;border-right:1px solid #252d32;background:#080d10}.header-resource-maximum:last-child{border-right:0}.header-resource-maximum b{grid-area:label;font-size:.62rem;color:#7f8b92}.header-resource-maximum strong{grid-area:value;font-size:1.15rem}.header-resource-maximum small{position:absolute;right:7px;bottom:5px;font-size:.52rem;color:#68737a}
+#sheet-page-menu [hidden]{display:none!important}
+.app-menu-view{min-height:100dvh;padding:calc(28px + env(safe-area-inset-top)) 8px calc(100px + env(safe-area-inset-bottom));color:#eef2f4}.app-menu-view header{padding:12px 10px 22px}.app-menu-view h2{margin:4px 0;font-size:2rem}.app-menu-list{display:grid;border-top:1px solid #34434c}.app-menu-list>button,.app-menu-list>div{display:grid;gap:5px;width:100%;padding:18px 14px;text-align:left;border:0;border-bottom:1px solid #34434c;border-radius:0;background:#111a20;color:#eef2f4;box-shadow:none}.app-menu-list small{color:#98a6af}.app-menu-list button:disabled{opacity:.55}
+body[data-workspace="more"]{background:#0b1118}
+body[data-workspace="play"] #edit-mode-banner,body[data-workspace="play"] #header-options{display:none!important}
+body[data-workspace="character"] #header-conditions{display:none!important}
+.app-bottom-nav button:disabled{opacity:.35;filter:grayscale(1);cursor:not-allowed}
