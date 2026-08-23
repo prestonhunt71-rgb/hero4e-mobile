@@ -1227,6 +1227,8 @@ main:has(#sheet-view.active){width:100%;height:100dvh;margin:0;padding:0}
 .entry-group h4 span{color:#d33a41}
 .page-add{display:block;margin:0 0 10px auto}
 .page-entry-actions{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-bottom:10px;color:var(--muted)}
+.page-toolbar{display:flex;justify-content:flex-end;margin-bottom:10px}
+.page-accounting{margin:0 0 10px;color:var(--muted);font-size:.9rem}
 @media(max-width:430px){.sheet-heading{padding-left:8px;padding-right:8px;padding-bottom:5px}.sheet-title-row{min-height:62px}.sheet-title-row .sheet-portrait{width:54px;height:54px}.sheet-hero-summary{margin-top:3px}.header-cv-stack>button,.header-defense-stack>div{min-height:23px}.header-core-stats>div,.header-resources>label{min-height:38px}.header-phases{margin-top:3px;padding-block:2px}.sheet-jump{padding-bottom:2px}.sheet-menu-button,.sheet-jump>strong,.page-view-icons{height:36px}.sheet-page-scroll{padding-top:6px}}
 .sheet-page-scroll button,.sheet-page-scroll input,.sheet-page-scroll summary{scroll-margin-top:44px}
 #sheet-view.active:has(#edit-mode-banner[hidden]){grid-template-rows:auto auto minmax(0,1fr)}
