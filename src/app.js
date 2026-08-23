@@ -859,7 +859,7 @@ $("#entry-form").addEventListener("submit", (event) => {
                   characteristics: current.characteristics,
                   improvements: $("#skill-improvements").value,
                   familiarity: $("#skill-familiarity").checked,
-                  characteristicBased: $("#skill-characteristic").checked,
+                  everyman: $("#skill-characteristic").checked,
                   ...collectSkillOptions(),
                   notes: $("#entry-notes").value,
                 })
@@ -914,7 +914,7 @@ $("#entry-form").addEventListener("submit", (event) => {
 });
 function updateExistingEntryFromForm(section, entry) {
   if (section === "skills" && SKILLS_4E[$("#skill-key").value]) {
-    entry.mechanics = calculateSkill4e($("#skill-key").value, current.characteristics, {improvements:Number($("#skill-improvements").value||0),familiarity:$("#skill-familiarity").checked,characteristicBased:$("#skill-characteristic").checked,...collectSkillOptions()});
+    entry.mechanics = calculateSkill4e($("#skill-key").value, current.characteristics, {improvements:Number($("#skill-improvements").value||0),everyman:$("#skill-characteristic").checked,familiarity:$("#skill-familiarity").checked,...collectSkillOptions()});
     entry.xmlId = $("#skill-key").value; entry.levels = entry.mechanics.improvements; entry.baseCost = entry.mechanics.cost;
   } else if (section === "martialarts" && MARTIAL_MANEUVERS_4E[$("#martial-key").value]) {
     const rebuilt=buildMartialManeuver4e({key:$("#martial-key").value,name:entry.name,category:$("#martial-category").value,useWeapon:$("#martial-use-weapon").checked,notes:entry.notes});
@@ -1057,11 +1057,11 @@ function updateSkillBuilder() {
   const visible = $("#entry-new-section").value === "skills";
   $("#skill-builder").hidden = !visible;
   if (!visible) return;
-  const definition = SKILLS_4E[$("#skill-key").value],background=Boolean(definition?.background);
-  $("#skill-characteristic-wrap").hidden = !background;
+  const definition = SKILLS_4E[$("#skill-key").value];
+  $("#skill-characteristic-wrap").hidden = false;
   if($("#skill-special-options").dataset.key!==$("#skill-key").value){$("#skill-special-options").dataset.key=$("#skill-key").value;renderSkillSpecialOptions();}
   try {
-    const s=calculateSkill4e($("#skill-key").value,current.characteristics,{improvements:Number($("#skill-improvements").value||0),familiarity:$("#skill-familiarity").checked,characteristicBased:$("#skill-characteristic").checked,...collectSkillOptions()});
+    const s=calculateSkill4e($("#skill-key").value,current.characteristics,{improvements:Number($("#skill-improvements").value||0),everyman:$("#skill-characteristic").checked,familiarity:$("#skill-familiarity").checked,...collectSkillOptions()});
     $("#skill-preview").textContent=[s.detail||s.characteristic||"General",Number.isFinite(s.roll)?s.roll+"-":"No roll",s.cost+" points"].join(" · ");
     updateEntryFacts("skills",{mechanics:s,xmlId:$("#skill-key").value});
   } catch(error){$("#skill-preview").textContent=error.message;}
@@ -1158,7 +1158,7 @@ function prepareExistingEntryBuilder(section, entry) {
   if(section==="powers"&&m.isFramework){
     $("#special-kind").innerHTML='<option value="multipower">Multipower</option><option value="elementalControl">Elemental Control</option><option value="vpp">Variable Power Pool</option>';$("#special-kind").value=m.kind;$("#framework-points").value=m.points||entry.levels||20;$("#framework-advantages").value=m.advantages||0;$("#framework-limitations").value=m.limitations||0;updateSpecialBuilder();
   }else if(section==="skills"&&SKILLS_4E[m.key]){
-    $("#skill-key").value=m.key;$("#skill-improvements").value=m.improvements??entry.levels??0;$("#skill-familiarity").checked=Boolean(m.familiarity);$("#skill-characteristic").checked=Boolean(m.characteristicBased);$("#skill-special-options").dataset.key=m.key;renderSkillSpecialOptions(m);updateSkillBuilder();
+    $("#skill-key").value=m.key;$("#skill-improvements").value=m.improvements??entry.levels??0;$("#skill-familiarity").checked=Boolean(m.familiarity);$("#skill-characteristic").checked=Boolean(m.everyman);$("#skill-special-options").dataset.key=m.key;renderSkillSpecialOptions(m);updateSkillBuilder();
   }else if(section==="martialarts"&&MARTIAL_MANEUVERS_4E[m.key]){
     $("#martial-key").value=m.key;$("#martial-category").value=m.category||"Hand-To-Hand";$("#martial-use-weapon").checked=Boolean(m.useWeapon);updateMartialBuilder();
   }else if(section==="powers"&&!m.isFramework&&POWER_CATALOG_4E[m.key]){
@@ -1252,6 +1252,8 @@ for (const id of [
   "skill-characteristic",
 ])
   $("#" + id).addEventListener("input", updateSkillBuilder);
+$("#skill-characteristic").addEventListener("change",()=>{if($("#skill-characteristic").checked)$("#skill-familiarity").checked=false;updateSkillBuilder();});
+$("#skill-familiarity").addEventListener("change",()=>{if($("#skill-familiarity").checked)$("#skill-characteristic").checked=false;updateSkillBuilder();});
 for (const id of [
   "power-key",
   "power-levels",
