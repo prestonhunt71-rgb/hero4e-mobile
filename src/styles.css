@@ -932,6 +932,10 @@ button:active {
   display: grid;
   gap: 7px;
 }
+
+/* Character-art editing keeps the existing button stack but removes the redundant thumbnail. */
+.portrait-editor > div:last-child{grid-template-columns:1fr}
+.portrait-editor .portrait-status{grid-column:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .portrait-editor small {
   color: var(--muted);
   font-size: 0.68rem;
@@ -1322,4 +1326,35 @@ label.check input,.dice-modes input,.dice-half input{width:20px!important;height
 #skill-preview{display:none}
 body[data-workspace="play"] #edit-mode-banner,body[data-workspace="play"] #header-options{display:none!important}
 body[data-workspace="character"] #header-conditions{display:none!important}
+body[data-workspace="character"] .characteristics-rolls-panel{display:none!important}
+body.edit-mode[data-workspace="character"]:not([data-sheet-page="characteristics"]) .sheet-hero-summary,
+body.edit-mode[data-workspace="character"]:not([data-sheet-page="characteristics"]) .header-core-stats,
+body.edit-mode[data-workspace="character"]:not([data-sheet-page="characteristics"]) .header-resources{display:none!important}
 .app-bottom-nav button:disabled{opacity:.35;filter:grayscale(1);cursor:not-allowed}
+
+/* v74 observation audit: hidden controls stay hidden regardless of later layout rules. */
+[hidden]{display:none!important}
+.header-cv-stack .static-value{cursor:default;color:inherit;box-shadow:none;pointer-events:none}
+#header-move+small,.header-core-stats>div small{font:inherit;font-size:inherit;font-weight:inherit;line-height:inherit;color:inherit;vertical-align:baseline}
+
+/* Compact, page-specific character editing. */
+.background-edit-form{width:100%;padding:2px 4px calc(90px + env(safe-area-inset-bottom));gap:12px!important}
+.background-edit-form>label{display:grid!important;grid-template-columns:1fr!important;gap:5px;width:100%;margin:0;color:#e7edf1;font-size:.76rem}
+.background-edit-form input,.background-edit-form textarea{display:block;width:100%;max-width:none;margin:0;box-sizing:border-box;background:#121a20;color:#f4f7f9;border:1px solid #44525b;border-radius:3px;padding:10px;font:inherit}
+.background-edit-form textarea{min-height:62px;resize:vertical}
+.point-edit{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:12px}
+.point-edit label{display:grid;gap:5px;min-width:0;font-size:.72rem}.point-edit input{width:100%;box-sizing:border-box}
+.profile-summary{padding-bottom:calc(82px + env(safe-area-inset-bottom))}
+
+.portrait-editor{display:block;margin:0 0 8px}.portrait-editor>div{display:grid!important;grid-template-columns:1fr;gap:7px!important}.portrait-editor small{grid-column:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.portrait-editor .button,.portrait-editor button{width:100%;margin:0}
+#art-page-panel{padding-bottom:calc(82px + env(safe-area-inset-bottom))}.character-art-page{min-height:0}.character-art-page img{max-height:none;height:auto;object-fit:contain}
+
+.number-stepper{display:grid;grid-template-columns:48px minmax(70px,110px) 48px;align-items:center;gap:7px}.number-stepper button{height:44px;padding:0;font-size:1.4rem}.number-stepper input{width:100%;height:44px;text-align:center;font-size:1rem}
+.skill-checks{display:grid;gap:7px;margin-top:10px;max-width:260px}.skill-checks .check{display:grid;grid-template-columns:1fr 24px;align-items:center;gap:10px;width:100%;margin:0}.skill-checks .check span{text-align:left}.skill-checks .check input{justify-self:end}
+.characteristic-edit{cursor:pointer}.characteristic-stepper{grid-template-columns:56px minmax(90px,1fr) 56px}.characteristic-dialog p{color:var(--muted)}
+
+.entry-dialog-actions{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;flex-wrap:nowrap}.entry-dialog-actions button{width:100%;min-width:0!important;margin:0}.entry-dialog-actions #delete-entry{grid-column:1}.entry-dialog-actions #cancel-entry{grid-column:2}.entry-dialog-actions button[type="submit"]{grid-column:3}
+#entry-points-label{display:grid;gap:5px}#entry-points-label input{width:100%}
+#disadvantage-preview:empty,#skill-preview:empty{display:none}
+
+#math-panel{padding-bottom:calc(94px + env(safe-area-inset-bottom))}#math-panel>.point-edit{margin-top:14px}
