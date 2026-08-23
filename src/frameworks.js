@@ -34,15 +34,17 @@ export function frameworkCost4e(framework,powers=[]){
     const controlActive=rounded(points/2*(1+Number(m.advantages||0))),controlReal=rounded(controlActive/(1+Number(m.limitations||0)));
     return {reserve:points,slots:[],total:points+controlReal,detail:`${points} Pool + ${controlReal} Control`};
   }
-  const reserve=rounded(points/(1+Number(m.limitations||0)));
+  const frameworkBase=m.kind==="elementalControl"?points/2:points;
+  const reserve=rounded(frameworkBase/(1+Number(m.limitations||0)));
   const costs=slots.map(slot=>{
     const active=Number(slot.mechanics?.activeCost||0),slotLimitations=Number(slot.mechanics?.limitations||0);
     if(m.kind==="multipower")return rounded(rounded(active/(slot.mechanics?.slotKind==="fixed"?10:5))/(1+slotLimitations));
-    if(active<points*2)return null;
-    return rounded((active-points)/(1+Number(m.limitations||0)+slotLimitations));
+    if(active<points)return null;
+    return rounded((active-reserve)/(1+slotLimitations));
   });
   const valid=costs.filter(Number.isFinite);
-  return {reserve,slots:costs,total:reserve+valid.reduce((sum,cost)=>sum+cost,0),detail:`${points}-point ${m.kind==="multipower"?"reserve":"base"} + ${valid.reduce((sum,cost)=>sum+cost,0)} slot points`,invalid:costs.some(cost=>cost===null)};
+  const slotTotal=valid.reduce((sum,cost)=>sum+cost,0),label=m.kind==="multipower"?`${points}-point reserve`:`${points}-Active-Point base (${reserve} Character Points)`;
+  return {reserve,slots:costs,total:reserve+slotTotal,detail:`${label} + ${slotTotal} slot points`,invalid:costs.some(cost=>cost===null)};
 }
 
 export function frameworkSummary4e(framework,powers=[]){const cost=frameworkCost4e(framework,powers);return [cost.detail,cost.total+" points",cost.invalid?"slot below minimum":""].filter(Boolean).join(" · ");}

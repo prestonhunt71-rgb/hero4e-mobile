@@ -101,21 +101,21 @@
           <div class="header-core-stats" aria-label="Core play values"><div><span>SPD</span><strong id="header-spd">2</strong></div><div><span>DEX</span><strong id="header-dex">10</strong></div><div><span>RUN</span><strong id="header-move">6</strong><small>″</small></div></div>
           <div id="header-phases" class="header-phases" aria-label="Speed phases"><span>Phases</span><strong>6, 12</strong></div>
           <div id="header-resources" class="header-resources" aria-label="Current STUN END and BODY"></div>
-          <div class="sheet-header-actions"><button id="header-options" class="header-tool" type="button" aria-label="Edit character"><span aria-hidden="true">✎</span><b>Edit</b></button><button id="header-conditions" class="header-tool" type="button"><b>Conditions</b></button></div>
+          <div class="sheet-header-actions"><button id="header-options" class="header-tool" type="button" aria-label="Edit character"><span aria-hidden="true">✎</span><b>Edit</b></button><div id="header-point-summary" class="header-point-summary" aria-label="Experience and spent Character Points"><span><b>XP</b><strong id="header-xp">0</strong><button id="add-xp" type="button" aria-label="Add one earned Experience Point" hidden>+</button></span><span><b>Spent</b><strong id="header-spent">0</strong></span></div><button id="header-cancel-edit" class="header-tool" type="button" hidden><b>Cancel</b></button><button id="header-conditions" class="header-tool" type="button"><b>Conditions</b></button></div>
         </header>        <div id="edit-mode-banner" class="edit-mode-banner" hidden>EDIT MODE · Dice and Combat are locked until you save.</div>
         <nav class="sheet-jump" aria-label="Character sheet sections">
           <button id="sheet-menu-button" class="sheet-menu-button" type="button" aria-label="Open character page menu" aria-expanded="false"><span aria-hidden="true">☰</span></button>
           <strong id="sheet-page-title">Actions</strong>
-          <span class="page-view-icons" aria-hidden="true">▦ &nbsp;☷</span>
+          <button id="sheet-add-button" class="sheet-add-button" type="button" aria-label="Add item" hidden>+</button>
           <div id="sheet-page-menu" class="sheet-page-menu">
-            <button data-page="actions" data-workspace="play">Actions</button><button data-page="characteristics" data-workspace="character play">Characteristics</button><button data-page="skills" data-workspace="character play">Skills</button><button data-page="talents" data-workspace="character play">Talents / Perks</button><button data-page="martialarts" data-workspace="character play">Martial Arts</button><button data-page="powers" data-workspace="character play">Powers</button><button data-page="disadvantages" data-workspace="character play">Disadvantages</button><button data-page="background" data-workspace="character">Background</button><button data-page="art" data-workspace="character">Character Art</button><button data-page="math" data-workspace="character">Balance Sheet</button><button data-page="manage" data-workspace="character">Options</button>
+            <button data-page="actions" data-workspace="play">Actions</button><button data-page="characteristics" data-workspace="character play">Characteristics</button><button data-page="skills" data-workspace="character play">Skills</button><button data-page="talents" data-workspace="character play">Talents</button><button data-page="perks" data-workspace="character play">Perks</button><button data-page="martialarts" data-workspace="character play">Martial Arts</button><button data-page="powers" data-workspace="character play">Powers</button><button data-page="disadvantages" data-workspace="character play">Disadvantages</button><button data-page="background" data-workspace="character">Background</button><button data-page="art" data-workspace="character">Character Art</button><button data-page="math" data-workspace="character">Balance Sheet</button>
           </div>
         </nav>
         <div class="sheet-page-scroll">
-        <section class="panel art-page-panel" id="art-page-panel"><div class="character-art-page"><img id="page-art-image" alt="" /><div id="page-art-empty">No character art selected.</div></div></section>
+        <section class="panel art-page-panel" id="art-page-panel"><div id="art-edit-controls"></div><div class="character-art-page"><img id="page-art-image" alt="" /><div id="page-art-empty">No character art selected.</div></div></section>
         <section class="panel" id="profile-panel">
           <div class="page-toolbar">
-            <button id="profile-button" class="mini">Edit</button>
+            <button id="profile-button" class="mini" hidden>Edit</button>
           </div>
           <div id="profile-summary" class="profile-summary"></div>
         </section>
@@ -156,19 +156,22 @@
           <div id="defense-values" class="defense-grid"></div>
         </section>
         <section class="panel entry-page" id="skills-panel">
-          <button id="add-entry" data-add-entry="skills" class="mini page-add" hidden>Add Skill</button><div id="skills-sections" class="entry-sections"></div>
+          <div id="skills-sections" class="entry-sections"></div>
         </section>
         <section class="panel entry-page" id="talents-panel">
-          <button data-add-entry="talents" class="mini page-add" hidden>Add Talent or Perk</button><div id="talents-sections" class="entry-sections"></div>
+          <div id="talents-sections" class="entry-sections"></div>
+        </section>
+        <section class="panel entry-page" id="perks-panel">
+          <div id="perks-sections" class="entry-sections"></div>
         </section>
         <section class="panel entry-page" id="martial-panel">
-          <button data-add-entry="martialarts" class="mini page-add" hidden>Add Maneuver</button><div id="martial-sections" class="entry-sections"></div>
+          <div id="martial-sections" class="entry-sections"></div>
         </section>
         <section class="panel entry-page" id="powers-panel">
-          <div class="page-entry-actions"><span id="ability-count"></span><button data-add-entry="powers" class="mini page-add" hidden>Add Power</button></div><div id="powers-sections" class="entry-sections"></div>
+          <div class="page-entry-actions"><span id="ability-count"></span></div><div id="powers-sections" class="entry-sections"></div>
         </section>
         <section class="panel entry-page" id="disadvantages-panel">
-          <button data-add-entry="disadvantages" class="mini page-add" hidden>Add Disadvantage</button><div id="disadvantages-sections" class="entry-sections"></div>
+          <div id="disadvantages-sections" class="entry-sections"></div>
         </section>
         <section class="panel combat-panel">
           <div class="panel-title">
@@ -245,17 +248,6 @@
         <section class="panel" id="math-panel">
           <div class="panel-title"><h3>Character Math</h3><span>Fourth Edition point accounting</span></div>
           <div id="math-summary" class="math-summary"></div>
-        </section>        <section class="panel" id="options-panel">
-          <div class="panel-title"><h3>Manage Character</h3></div>
-          <p id="mode-status" class="mode-status">Play mode · Character fields are locked.</p>
-          <div class="options-actions">
-            <button id="export-json" class="quiet">Export HERO4E</button>
-            <button id="export-foundry" class="quiet">Export Foundry</button>
-            <button id="export-hdc" class="quiet" hidden>Export HDC</button>
-            <button id="save-pdf" class="quiet">Save PDF</button>
-            <button id="print-character" class="quiet">Print</button>
-            <button id="delete-character" class="quiet danger-text">Delete Character</button>
-          </div>
         </section>
         </div>
       </section>
@@ -265,6 +257,12 @@
           <button id="more-backup" type="button"><strong>Backup Roster</strong><small>Save all local characters to a backup file</small></button>
           <button id="more-restore" type="button"><strong>Restore Roster</strong><small>Choose a HERO4E roster backup</small></button>
           <button id="report-issue" type="button"><strong>Report Issue</strong><small>Prepare an app diagnostic report</small></button>
+          <button id="export-json" type="button"><strong>Export HERO4E</strong><small>Export the selected character</small></button>
+          <button id="export-foundry" type="button"><strong>Export Foundry</strong><small>Export the selected character for Foundry</small></button>
+          <button id="export-hdc" type="button"><strong>Export HDC</strong><small>Export the selected character for Hero Designer</small></button>
+          <button id="save-pdf" type="button"><strong>Save PDF</strong><small>Download a letter-size character sheet</small></button>
+          <button id="print-character" type="button"><strong>Print</strong><small>Print the selected character</small></button>
+          <button id="delete-character" class="danger-text" type="button"><strong>Delete Character</strong><small>Permanently remove the selected character from this device</small></button>
           <button type="button" disabled><strong>Settings</strong><small>Application preferences are coming later</small></button>
           <div><strong>About</strong><small>HERO4E Mobile · Fourth Edition character companion</small></div>
         </div>
@@ -311,24 +309,26 @@
           >Alternate identities<input id="profile-alternateIdentities" /></label
         ><label>Campaign<input id="profile-campaignName" /></label
         ><label
-          >Background<textarea
+          >Background/History<textarea
             id="profile-background"
             rows="5"
           ></textarea></label
         ><label
-          >Personality<textarea
+          >Personality/Motivation<textarea
             id="profile-personality"
             rows="4"
           ></textarea></label
         ><label>Quote<textarea id="profile-quote" rows="2"></textarea></label
         ><label
-          >Tactics<textarea id="profile-tactics" rows="4"></textarea></label
+          >Powers/Tactics<textarea id="profile-tactics" rows="4"></textarea></label
+        ><label
+          >Campaign Use<textarea id="profile-campaignUse" rows="4"></textarea></label
         ><label
           >Appearance<textarea
             id="profile-appearance"
             rows="4"
           ></textarea></label
-        ><label>Notes<textarea id="profile-notes" rows="4"></textarea></label>
+        >
         <div class="point-edit">
           <label
             >Base Character Points<input
@@ -345,7 +345,7 @@
               id="points-experience"
               type="number"
               inputmode="numeric"
-          /></label>
+          /><button id="points-experience-plus" type="button" aria-label="Add one earned Experience Point">+</button></label>
         </div>
         <div class="dialog-actions">
           <button id="cancel-profile" type="button" class="quiet">Cancel</button
@@ -593,11 +593,11 @@
           <div id="power-preview" class="power-preview"></div>
         </div>
         <label>Name<input id="entry-name" placeholder="Uses the selected rule name when blank" /></label>
-        <label
+        <label id="entry-points-label"
           >Character Points<input id="entry-levels" type="number" inputmode="numeric"
         /></label>
-        <div class="form-fact"><span>Calculated Character Point Cost</span><strong id="entry-cost-display">—</strong></div>
-        <div class="form-fact"><span>Skill Roll</span><strong id="entry-roll-display">None</strong></div>
+        <div id="entry-cost-fact" class="form-fact"><span>Character Point Cost</span><strong id="entry-cost-display">—</strong></div>
+        <div id="entry-roll-fact" class="form-fact"><span>Roll</span><strong id="entry-roll-display">None</strong></div>
         <section class="rules-definition"><h4>Fourth Edition definition <span id="entry-reference" class="bbb-reference"></span></h4><p id="entry-definition"></p></section>
         <label>Notes<textarea id="entry-notes" rows="5"></textarea></label>
         <div id="entry-organize" class="organize-actions">

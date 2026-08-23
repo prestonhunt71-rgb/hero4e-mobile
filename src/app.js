@@ -113,16 +113,17 @@ function toast(message) {
   setTimeout(() => node.classList.remove("show"), 2200);
 }
 const workspacePageOrder = {
-  character:["characteristics","skills","talents","martialarts","powers","disadvantages","background","art","math","manage"],
-  play:["actions","characteristics","skills","talents","martialarts","powers","disadvantages"],
+  character:["characteristics","skills","talents","perks","martialarts","powers","disadvantages","background","art","math"],
+  play:["actions","characteristics","skills","talents","perks","martialarts","powers","disadvantages"],
 };
-const sheetPageLabels = {actions:"Actions",characteristics:"Characteristics",skills:"Skills",talents:"Talents / Perks",martialarts:"Martial Arts",powers:"Powers",disadvantages:"Disadvantages",background:"Background",art:"Character Art",math:"Balance Sheet",manage:"Manage Character"};
+const sheetPageLabels = {actions:"Actions",characteristics:"Characteristics",skills:"Skills",talents:"Talents",perks:"Perks",martialarts:"Martial Arts",powers:"Powers",disadvantages:"Disadvantages",background:"Background",art:"Character Art",math:"Balance Sheet"};
+const addableSheetPages = {skills:"skills",talents:"talents",perks:"perks",martialarts:"martialarts",powers:"powers",disadvantages:"disadvantages"};
 function setupSheetPages() {
   const groups = {
     actions: [$(".character-actions-panel")], play: [$(".play-speed-panel"), $(".combat-panel")],
     characteristics: [$("#movement")?.closest(".panel"), $(".characteristics-rolls-panel"), $(".characteristics-panel")],
-    skills: [$("#skills-panel")], talents: [$("#talents-panel")], martialarts: [$("#martial-panel")], powers: [$("#powers-panel")], disadvantages: [$("#disadvantages-panel")],
-    background: [$("#profile-panel")], art: [$("#art-page-panel")], math: [$("#point-grid")?.closest(".panel"), $("#math-panel")], manage: [$("#options-panel")],
+    skills: [$("#skills-panel")], talents: [$("#talents-panel")], perks: [$("#perks-panel")], martialarts: [$("#martial-panel")], powers: [$("#powers-panel")], disadvantages: [$("#disadvantages-panel")],
+    background: [$("#profile-panel")], art: [$("#art-page-panel")], math: [$("#point-grid")?.closest(".panel"), $("#math-panel")],
   };
   for (const [page, nodes] of Object.entries(groups)) for (const node of nodes.filter(Boolean)) { node.classList.add("sheet-section-page"); node.dataset.sheetPage = page; }
 }
@@ -132,6 +133,7 @@ function showSheetPage(page) {
   if(page!=="manage"&&!order.includes(page))page=order[0];
   if(page==="manage"&&currentWorkspace!=="character")page=order[0];
   currentSheetPage = page;
+  document.body.dataset.sheetPage=page;
   if(currentWorkspace==="character"&&page!=="manage")lastCharacterPage=page;
   document.body.dataset.workspace=currentWorkspace;
   setAppNav(currentWorkspace);
@@ -142,6 +144,7 @@ function showSheetPage(page) {
     button.classList.toggle("active", permitted&&button.dataset.page===page);
   });
   $("#sheet-page-title").textContent=sheetPageLabels[page];setSheetMenu(false);
+  updateSheetAddButton();
   const sheetView=$("#sheet-view"); if(sheetView) sheetView.scrollTop=0;
   renderWorkspaceState();
 }
@@ -151,13 +154,24 @@ function renderWorkspaceState(){
   document.body.dataset.workspace=currentWorkspace;
   const character=currentWorkspace==="character",play=currentWorkspace==="play";
   $("#header-options").hidden=!character;
+  $("#header-point-summary").hidden=!character;
+  $("#header-cancel-edit").hidden=!(character&&editMode);
+  if(character&&editMode)$("#header-point-summary").hidden=true;
   $("#header-conditions").hidden=!play;
   $(".floating-dice").hidden=!play;
   document.querySelectorAll(".header-cv-stack [data-combat-roll]").forEach(button=>button.disabled=!play);
   $("#sheet-menu-button").setAttribute("aria-label",`Open ${currentWorkspace} page menu`);
   if(current)refreshResources();
   $("#edit-entry-detail").hidden=!(character&&editMode);
+  updateSheetAddButton();
   updatePlayAvailability();
+}
+function updateSheetAddButton(){
+  const button=$("#sheet-add-button"),section=addableSheetPages[currentSheetPage];
+  if(!button)return;
+  button.hidden=!(editMode&&currentWorkspace==="character"&&section);
+  button.dataset.addEntry=section||"";
+  button.setAttribute("aria-label",section?`Add ${sheetPageLabels[currentSheetPage]} item`:"Add item");
 }
 function openAppMode(mode){
   if(mode==="character"){
@@ -170,25 +184,39 @@ function openAppMode(mode){
   }else if(mode==="more"){
     if(editMode)return toast("Save the character before leaving Character");
     currentWorkspace="more";show("more-view");setAppNav("more");document.body.dataset.workspace="more";
+    for(const id of ["export-json","export-foundry","export-hdc","save-pdf","print-character","delete-character"])$("#"+id).disabled=!current;
   }else toast("Campaign management is coming next");
 }
 function setupSheetGestures(){let startX=0,startY=0;const view=$("#sheet-view");view.addEventListener("touchstart",event=>{if(event.touches.length===1){startX=event.touches[0].clientX;startY=event.touches[0].clientY;}},{passive:true});view.addEventListener("touchend",event=>{if(!startX||!event.changedTouches.length)return;const dx=event.changedTouches[0].clientX-startX,dy=event.changedTouches[0].clientY-startY;startX=0;if(Math.abs(dx)<65||Math.abs(dx)<Math.abs(dy)*1.25||event.target.closest("input,textarea,select,button,dialog"))return;const order=workspacePageOrder[currentWorkspace]||[];const index=order.indexOf(currentSheetPage);if(index<0)return;const next=dx<0?Math.min(order.length-1,index+1):Math.max(0,index-1);if(next!==index)showSheetPage(order[next]);},{passive:true});}
 function setupIdentityOptions(){
-  const form=$("#identity-form"),dialog=$("#identity-dialog");
-  form.classList.add("options-identity"); $("#mode-status").after(form); dialog.remove();
-  $("#cancel-identity").hidden=true; form.querySelector("h3").textContent="Identity & Character Image";
+  const identity=$("#identity-form"),identityDialog=$("#identity-dialog"),profile=$("#profile-form"),profileDialog=$("#profile-dialog");
+  $("#art-edit-controls").append(identity.querySelector(".portrait-editor"));
+  const nameLabel=$("#identity-name").closest("label"),playerLabel=$("#identity-player").closest("label");
+  profile.querySelector("h3").after(nameLabel,playerLabel);
+  profile.classList.add("background-edit-form");$("#profile-panel").append(profile);
+  $("#math-panel").append(profile.querySelector(".point-edit"));
+  identityDialog.remove();profileDialog.remove();
+  profile.querySelector(".dialog-actions").remove();
+  $(".identity-heading").append($("#edit-mode-banner"));
+}
+function setupPowerModifierDialog(){
+  const editor=$("#power-advantage-key").closest(".modifier-builder"),dialog=document.createElement("dialog");
+  dialog.id="power-modifier-dialog";dialog.className="entry-dialog";dialog.setAttribute("aria-label","Power modifier");
+  dialog.innerHTML='<form method="dialog"><h3 id="modifier-editor-title">Add Modifier</h3><div id="modifier-editor-fields"></div><div class="dialog-actions"><button id="cancel-power-modifier" type="button" class="quiet">Cancel</button><button id="apply-power-modifier" type="button" class="primary">Apply</button></div></form>';
+  document.body.append(dialog);$("#modifier-editor-fields").append(editor);
 }
 function setEditMode(value){
   editMode=Boolean(value); document.body.classList.toggle("edit-mode",editMode);
-  $("#edit-mode-banner").hidden=!editMode; $("#mode-status").textContent=editMode?"Edit mode · Make changes, then Save to lock the character.":"Character locked · Choose Edit to make changes.";
+  $("#edit-mode-banner").hidden=!editMode;
   $("#header-options b").textContent=editMode?"Save":"Edit";
   $("#header-options").setAttribute("aria-label",editMode?"Save character":"Edit character");
+  $("#add-xp").hidden=!editMode;
   $("#dice-overlay-button").disabled=editMode; $(".combat-panel").inert=editMode;
 
-  document.querySelectorAll("[data-stat], #identity-form input, #identity-form textarea, #identity-form button").forEach(node=>node.disabled=!editMode);
+  document.querySelectorAll("[data-stat], #identity-form input, #identity-form textarea, #identity-form button, #profile-form input, #profile-form textarea, #art-edit-controls input, #art-edit-controls button, .point-edit input, .point-edit button").forEach(node=>node.disabled=!editMode);
   document.querySelectorAll("[data-current]").forEach(node=>node.disabled=editMode);
   document.querySelectorAll("[data-sheet-roll], .entry-roll").forEach(node=>node.disabled=editMode);
-  $("#profile-button").hidden=!(editMode&&currentWorkspace==="character"); document.querySelectorAll("[data-add-entry]").forEach(node=>node.hidden=!(editMode&&currentWorkspace==="character")); $("#edit-entry-detail").hidden=!(editMode&&currentWorkspace==="character");renderWorkspaceState();
+  $("#profile-button").hidden=true; $("#edit-entry-detail").hidden=!(editMode&&currentWorkspace==="character");renderWorkspaceState();
 }
 function characterBalance(character){
   const points=character?.points||{},sections=character?.sections||{};
@@ -216,7 +244,8 @@ function updatePlayAvailability(){
   button.title=eligible?"Open Play":!current?"Choose a character first":editMode||isDraft?"Save and lock the character first":!complete?"Complete the character before entering Play":balance?.available<=0?"Set the character's point allowance":"The character is overspent";
   return eligible;
 }
-function beginEdit(){ if(!current||editMode||currentWorkspace!=="character")return; editSnapshot=structuredClone(current); setEditMode(true); renderSheet(); showSheetPage("manage"); }
+function beginEdit(){ if(!current||editMode||currentWorkspace!=="character")return; editSnapshot=structuredClone(current); setEditMode(true); renderSheet(); showSheetPage(currentSheetPage); }
+function cancelEdit(){if(!editMode)return;current=isDraft?null:normalizeCharacter(editSnapshot);isDraft=false;editSnapshot=null;setEditMode(false);if(!current){renderLibrary();show("library-view");return;}renderSheet();showSheetPage(currentSheetPage);toast("Changes discarded");}
 function saveAndLockCharacter(){
   if(!current||!editMode)return;
   current.name=$("#identity-name").value.trim()||current.name;
@@ -333,7 +362,8 @@ function renderEntries() {
     `<section class="entry-group">${visible.length>1?`<h4>${labels[key] || key} <span>${entries.length}</span></h4>`:""}<div class="entry-list">${entries.map((entry) => `<button class="entry" data-entry-section="${key}" data-entry-id="${escapeHtml(entry.id)}"><strong>${escapeHtml(entry.name || entry.alias || "Unnamed " + (labels[key] || "item"))}</strong><small>${escapeHtml([entry.alias !== entry.name ? entry.alias : "", entry.option, entry.mechanics ? entryMechanicsSummary(key, entry) : ""].filter(Boolean).join(" · "))}</small></button>`).join("")}</div></section>`).join(""); };
   $("#skills-sections").innerHTML=groupMarkup(["skills"]);
   $("#martial-sections").innerHTML=groupMarkup(["martialarts"]);
-  $("#talents-sections").innerHTML=groupMarkup(["talents","perks"]);
+  $("#talents-sections").innerHTML=groupMarkup(["talents"]);
+  $("#perks-sections").innerHTML=groupMarkup(["perks"]);
   $("#powers-sections").innerHTML=groupMarkup(["powers","framework","equipment"]);
   $("#disadvantages-sections").innerHTML=groupMarkup(["disadvantages"]);
   document.querySelectorAll("[data-entry-id]").forEach((node) => {
@@ -352,20 +382,22 @@ function renderEntries() {
     }
   });
   $("#export-hdc").hidden = false;
-  document.querySelectorAll("[data-add-entry]").forEach(node=>node.hidden=!(editMode&&currentWorkspace==="character"));
+  updateSheetAddButton();
 }
 function renderProfile() {
   syncFrameworkCosts();
   const p = current.profile || {};
+  const profileKeys=["alternateIdentities","campaignName","background","personality","quote","tactics","campaignUse","appearance"];
+  for(const key of profileKeys){const field=$("#profile-"+key);if(field&&document.activeElement!==field)field.value=p[key]||"";}
+  if(document.activeElement!==$("#identity-name"))$("#identity-name").value=current.name||"";
+  if(document.activeElement!==$("#identity-player"))$("#identity-player").value=current.playerName||"";
   const rows = [
-    ["Identity", p.alternateIdentities],
-    ["Campaign", p.campaignName],
-    ["Background", p.background],
-    ["Personality", p.personality],
+    ["Background/History", p.background],
+    ["Personality/Motivation", p.personality],
     ["Quote", p.quote],
-    ["Tactics", p.tactics],
+    ["Powers/Tactics", p.tactics],
+    ["Campaign Use", p.campaignUse],
     ["Appearance", p.appearance],
-    ["Notes", p.notes],
   ].filter(([, value]) => value);
   $("#profile-summary").innerHTML = rows.length
     ? rows
@@ -376,8 +408,9 @@ function renderProfile() {
         .join("")
     : `<p class="muted">No profile details yet.</p>`;
   const points=current.points||{},math=characterBalance(current),{earnedDisadvantages,available,skills:knownSkills,abilities:knownAbilities,martial:knownMartial,powers:knownPowers,spent:knownSpent,remaining:balance}=math;
+  for(const [id,key] of [["points-base","base"],["points-disadvantages","disadvantages"],["points-experience","experience"]]){const field=$("#"+id);if(field&&document.activeElement!==field)field.value=Number(points[key]||0);}
   $("#point-summary").textContent = available + " Character Points available";
-  $("#profile-button").hidden = !editMode;
+  $("#profile-button").hidden = true;
   $("#point-grid").innerHTML = [
     ["Base Character Points", points.base],
     ["Maximum Disadvantage Points", points.disadvantages],
@@ -393,6 +426,8 @@ function renderProfile() {
     )
     .join("");
   $("#math-summary").innerHTML=[["Characteristics & Movement",totalCharacteristicCost(current.characteristics)],["Skills",knownSkills],["Talents & Perks",knownAbilities],["Martial Arts",knownMartial],["Powers",knownPowers],["Total Spent",knownSpent],["Available",available],["Remaining",balance]].map(([label,value])=>`<div><span>${label}</span><strong>${value}</strong></div>`).join("");
+  $("#header-xp").textContent=Number(points.experience||0);
+  $("#header-spent").textContent=knownSpent;
 
 }
 function characterDefenses() {
@@ -623,7 +658,7 @@ function updateStat(event) {
   renderDerived();
 }
 function openCharacter(id) { currentWorkspace="character";currentSheetPage="characteristics"; current=normalizeCharacter(getCharacter(id)); isDraft=false; editSnapshot=null; setEditMode(false); renderSheet(); show("sheet-view");showSheetPage("characteristics"); }
-function createCharacter() { currentWorkspace="character";currentSheetPage="manage"; current=normalizeCharacter({name:"New Hero"}); isDraft=true; editSnapshot=null; setEditMode(true); renderSheet(); show("sheet-view"); showSheetPage("manage"); toast("New character is not saved yet"); }
+function createCharacter() { currentWorkspace="character";currentSheetPage="background"; current=normalizeCharacter({name:"New Hero"}); isDraft=true; editSnapshot=null; setEditMode(true); renderSheet(); show("sheet-view"); showSheetPage("background"); toast("New character is not saved yet"); }
 function backupRoster() {
   const data = {
     format: "hero4e-mobile-roster",
@@ -850,6 +885,9 @@ $("#entry-form").addEventListener("submit", (event) => {
                     notes: "",
                     rawXml: "",
                   };
+    const repeatableSkills=new Set(["knowledge","skillLevels","combatSkillLevels","rangeSkillLevels","languages","professionalSkill","science","weaponFamiliarity","transportFamiliarity"]),key=entry.mechanics?.key||entry.xmlId;
+    const duplicate=(section==="skills"&&!repeatableSkills.has(key)||section==="martialarts")&&current.sections[section].some(item=>(item.mechanics?.key||item.xmlId)===key);
+    if(duplicate){toast(`${entry.alias||entry.name} is already on the character — edit the existing entry instead`);return;}
     current.sections[section].push(entry);
   }
   if (!entry) return;
@@ -1032,15 +1070,30 @@ function updateSkillBuilder() {
     $("#skill-preview").textContent=[s.detail||s.characteristic||"General",Number.isFinite(s.roll)?s.roll+"-":"No roll",s.cost+" points"].join(" · ");
     updateEntryFacts("skills",{mechanics:s,xmlId:$("#skill-key").value});
   } catch(error){$("#skill-preview").textContent=error.message;}
-}let additionalPowerModifiers = [];
-function allPowerModifiers() { return [...additionalPowerModifiers, selectedModifier("advantage"), selectedModifier("limitation")].filter(Boolean); }
-function renderPowerModifierList() {
+}let additionalPowerModifiers = [],modifierEditIndex=-1,modifierEditKind="advantage";
+function allPowerModifiers() { return [...additionalPowerModifiers]; }
+function legacyRenderPowerModifierList() {
   const host=$("#power-modifier-list");
   host.innerHTML=additionalPowerModifiers.map((modifier,index)=>`<span class="modifier-chip">${escapeHtml(modifier.name)} (${modifier.value>0?"+":"âˆ’"}${Math.abs(modifier.value)}) <button type="button" data-remove-power-modifier="${index}" aria-label="Remove ${escapeHtml(modifier.name)}">Ã—</button></span>`).join(" ");
   host.hidden=!additionalPowerModifiers.length;
 }
 function collectPowerOptions() {
   return Object.fromEntries([...document.querySelectorAll("[data-power-option]")].map((node) => [node.dataset.powerOption, node.type === "checkbox" ? node.checked : node.type === "number" ? Number(node.value || 0) : node.value]));
+}
+function openPowerModifierEditor(kind,index=-1){
+  modifierEditKind=kind;modifierEditIndex=index;
+  const advantage=kind==="advantage",existing=index>=0?additionalPowerModifiers[index]:null;
+  $("#modifier-editor-title").textContent=`${index<0?"Add":"Edit"} ${advantage?"Advantage":"Limitation"}`;
+  $("#power-advantage-key").closest("label").hidden=!advantage;$("#power-limitation-key").closest("label").hidden=advantage;
+  $("#power-advantage-custom").hidden=!advantage;$("#power-limitation-custom").hidden=advantage;
+  const select=$(advantage?"#power-advantage-key":"#power-limitation-key"),key=existing?.id||existing?.key||"none";
+  select.value=[...select.options].some(option=>option.value===key)?key:"custom";
+  if(existing&&select.value==="custom"){$(advantage?"#power-advantage-name":"#power-limitation-name").value=existing.name;$(advantage?"#power-advantages":"#power-limitations").value=Math.abs(existing.value);}
+  $("#power-modifier-dialog").showModal();
+}
+function renderPowerModifierList(){
+  const host=$("#power-modifier-list");
+  host.innerHTML=additionalPowerModifiers.map((modifier,index)=>`<div class="modifier-row"><span>${escapeHtml(modifier.name)}</span><strong>${modifier.value>0?"+":"−"}${Math.abs(modifier.value)}</strong><button type="button" data-edit-power-modifier="${index}">Edit</button><button type="button" data-remove-power-modifier="${index}" aria-label="Remove ${escapeHtml(modifier.name)}">Remove</button></div>`).join("");host.hidden=!additionalPowerModifiers.length;
 }
 function renderPowerOptions(saved = null) {
   const key = $("#power-key").value, host = $("#power-specific-options");
@@ -1094,10 +1147,13 @@ function updatePowerBuilder() {
 }
 function updateEntryFacts(section, entry) {
   const cost = entryPointCost(section, entry);
+  const framework=Boolean(entry?.mechanics?.isFramework),roll=entryRoll4e(entry);
   $("#entry-levels").value = cost;
   $("#entry-levels").readOnly = true;
+  $("#entry-points-label").hidden=true;
   $("#entry-cost-display").textContent = String(cost);
-  $("#entry-roll-display").textContent = entryRoll4e(entry);
+  $("#entry-roll-display").textContent = roll;
+  $("#entry-roll-fact").hidden=framework||roll==="None";
   $("#entry-definition").textContent = entryDefinition4e(section, entry);
   $("#entry-reference").textContent = entryReference4e(section, entry);
 }
@@ -1130,9 +1186,9 @@ function fillModifierSelect(selector, catalog, sign) {
     select.append(option);
   }
 }
-$("#power-key").innerHTML = Object.entries(POWER_CATALOG_4E)
-  .map(([key, p]) => '<option value="' + key + '">' + p.label + "</option>")
-  .join("");
+$("#power-key").innerHTML = '<optgroup label="Power Frameworks"><option value="framework:elementalControl">Elemental Control</option><option value="framework:multipower">Multipower</option><option value="framework:vpp">Variable Power Pool</option></optgroup><optgroup label="Powers">' + Object.entries(POWER_CATALOG_4E)
+  .map(([key, p]) => '<option value="' + key + '"'+(key==="absorption"?' selected':'')+'>' + p.label + "</option>")
+  .join("") + '</optgroup>';
 fillModifierSelect("#power-advantage-key", POWER_ADVANTAGES_4E, "+");
 fillModifierSelect("#power-limitation-key", POWER_LIMITATIONS_4E, "-");
 $("#equipment-kind").innerHTML = Object.entries(EQUIPMENT_TYPES_4E)
@@ -1153,11 +1209,17 @@ for (const id of [
 $("#disadvantage-key").innerHTML = Object.entries(DISADVANTAGES_4E)
   .map(([key, d]) => '<option value="' + key + '">' + d.label + "</option>")
   .join("");
-$("#add-power-advantage").addEventListener("click",()=>{const modifier=selectedModifier("advantage");if(!modifier)return;additionalPowerModifiers.push(modifier);$("#power-advantage-key").value="none";renderPowerModifierList();updatePowerBuilder();});
-$("#add-power-limitation").addEventListener("click",()=>{const modifier=selectedModifier("limitation");if(!modifier)return;additionalPowerModifiers.push(modifier);$("#power-limitation-key").value="none";renderPowerModifierList();updatePowerBuilder();});
-$("#power-modifier-list").addEventListener("click",event=>{const button=event.target.closest("[data-remove-power-modifier]");if(!button)return;additionalPowerModifiers.splice(Number(button.dataset.removePowerModifier),1);renderPowerModifierList();updatePowerBuilder();});
+$("#add-power-advantage").addEventListener("click",()=>openPowerModifierEditor("advantage"));
+$("#add-power-limitation").addEventListener("click",()=>openPowerModifierEditor("limitation"));
+$("#power-modifier-list").addEventListener("click",event=>{const remove=event.target.closest("[data-remove-power-modifier]"),edit=event.target.closest("[data-edit-power-modifier]");if(remove){additionalPowerModifiers.splice(Number(remove.dataset.removePowerModifier),1);renderPowerModifierList();updatePowerBuilder();}else if(edit){const index=Number(edit.dataset.editPowerModifier),modifier=additionalPowerModifiers[index];openPowerModifierEditor(modifier?.value>=0?"advantage":"limitation",index);}});
 $("#power-specific-options").addEventListener("input", updatePowerBuilder);
-$("#power-key").addEventListener("change", () => { const definition=POWER_CATALOG_4E[$("#power-key").value]; $("#power-levels").value=definition?.defaultLevels??1; updatePowerBuilder(); });
+$("#power-key").addEventListener("change", () => {
+  const value=$("#power-key").value;
+  if(value.startsWith("framework:")){
+    $("#entry-new-section").value="framework";$("#special-kind").value=value.split(":")[1];updateSpecialBuilder();updatePowerBuilder();return;
+  }
+  $("#entry-new-section").value="powers";updateSpecialBuilder();const definition=POWER_CATALOG_4E[value];$("#power-levels").value=definition?.defaultLevels??1;updatePowerBuilder();
+});
 $("#disadvantage-key").addEventListener("change", () =>
   updateDisadvantageBuilder(true),
 );
@@ -1167,9 +1229,14 @@ $("#disadvantage-levels").addEventListener("input", () =>
 $("#disadvantage-options").addEventListener("input", () =>
   updateDisadvantageBuilder(),
 );
-$("#skill-key").innerHTML = Object.entries(SKILLS_4E)
-  .map(([key, s]) => '<option value="' + key + '">' + s.label + "</option>")
-  .join("");
+$("#skill-key").innerHTML = '<optgroup label="Skill Enhancers">'+Object.entries(SKILL_ENHANCERS_4E).map(([key,item])=>`<option value="enhancer:${key}">${item.label}</option>`).join("")+'</optgroup><optgroup label="Skills">'+Object.entries(SKILLS_4E)
+  .map(([key, s]) => '<option value="' + key + '"'+(key==="acrobatics"?' selected':'')+'>' + s.label + "</option>")
+  .join("")+'</optgroup>';
+$("#skill-key").addEventListener("change",()=>{
+  const value=$("#skill-key").value;
+  if(value.startsWith("enhancer:")){$("#entry-new-section").value="enhancer";$("#special-kind").value=value.split(":")[1];updateSpecialBuilder();updateSkillBuilder();return;}
+  $("#entry-new-section").value="skills";updateSpecialBuilder();updateSkillBuilder();
+});
 $("#entry-new-section").addEventListener("change", () => {
   const section=$("#entry-new-section").value;
   $("#entry-category-heading").textContent=sectionLabels()[section]||section;
@@ -1234,7 +1301,7 @@ $("#entry-section-label").insertAdjacentHTML(
   `<div id="special-builder" hidden>
     <label id="special-kind-wrap">Fourth Edition type<select id="special-kind"></select></label>
     <div id="framework-fields" class="power-numbers">
-      <label>Reserve / base points<input id="framework-points" type="number" min="1" step="1" value="20" /></label>
+      <label><span id="framework-points-label">Framework points</span><input id="framework-points" type="number" min="1" step="1" value="20" /></label>
       <label>Control Advantages<input id="framework-advantages" type="number" min="0" step="0.25" value="0" /></label>
       <label>Framework Limitations<input id="framework-limitations" type="number" min="0" step="0.25" value="0" /></label>
     </div>
@@ -1248,6 +1315,7 @@ $("#power-builder").insertAdjacentHTML(
 
 function refreshFrameworkChoices() {
   const frameworks = (current?.sections?.powers || []).filter((entry) => entry.mechanics?.isFramework);
+  $("#framework-slot-fields").hidden=!frameworks.length;
   const prior = $("#power-framework").value;
   $("#power-framework").innerHTML = '<option value="">Standalone Power</option>' + frameworks.map((framework) => `<option value="${escapeHtml(framework.id)}">${escapeHtml(framework.name)}</option>`).join("");
   if (frameworks.some((framework) => framework.id === prior)) $("#power-framework").value = prior;
@@ -1272,7 +1340,10 @@ function updateSpecialBuilder() {
   }
   try {
     const preview = buildFramework4e({kind:$("#special-kind").value, points:Number($("#framework-points").value), advantages:Number($("#framework-advantages").value), limitations:Number($("#framework-limitations").value)});
+    const pointLabels={multipower:"Multipower Reserve",elementalControl:"Elemental Control Base (Active Points)",vpp:"Variable Power Pool"};
+    $("#framework-points-label").textContent=pointLabels[$("#special-kind").value]||"Framework points";
     $("#special-preview").textContent = frameworkSummary4e(preview, []);
+    updateEntryFacts("powers",preview);
   } catch (error) { $("#special-preview").textContent = error.message; }
 }
 $("#entry-new-section").addEventListener("change", updateSpecialBuilder);
@@ -1291,6 +1362,7 @@ $("#entry-form").addEventListener("submit", (event) => {
       : buildSkillEnhancer4e({key:$("#special-kind").value,name:$("#entry-name").value.trim(),notes:$("#entry-notes").value});
     const section = special === "framework" ? "powers" : "talents";
     current.sections[section] ??= [];
+    if(special==="enhancer"&&current.sections[section].some(item=>item.mechanics?.isSkillEnhancer&&item.mechanics?.key===entry.mechanics?.key)){toast(`${entry.alias} is already on the character — edit the existing entry instead`);return;}
     current.sections[section].push(entry);
     markHdcDirty(); syncFrameworkCosts(); $("#entry-dialog").close(); renderEntries(); renderProfile();
     toast(`${entry.alias} added — save the character`);
@@ -1313,7 +1385,7 @@ $("#entry-form").addEventListener("submit", () => {
 function openNewEntry(defaultSection="skills") {
   $("#entry-dialog").dataset.mode = "new";
   if(currentWorkspace!=="character"||!editMode)return;
-  $("#entry-section-label").hidden = false;
+  $("#entry-section-label").hidden = true;
   $("#entry-category-heading").textContent = "Character creation";
   $("#entry-form-heading").textContent = "Add Character Ability";
   $("#entry-organize").hidden = true;
@@ -1358,7 +1430,7 @@ function openNewEntry(defaultSection="skills") {
   updateMartialBuilder();
   $("#entry-dialog").showModal();
 }
-document.querySelectorAll("[data-add-entry]").forEach(node=>node.addEventListener("click",()=>openNewEntry(node.dataset.addEntry)));
+$("#sheet-add-button").addEventListener("click",()=>{const section=addableSheetPages[currentSheetPage];if(section&&editMode&&currentWorkspace==="character")openNewEntry(section);});
 $("#cancel-entry").addEventListener("click", () => $("#entry-dialog").close());
 $("#export-json").addEventListener("click", exportJson);
 $("#export-foundry").addEventListener("click", exportFoundry);
@@ -1375,50 +1447,19 @@ $("#close-art").addEventListener("click",()=>$("#art-dialog").close());
 $("#art-zoom-in").addEventListener("click",()=>{artZoom=Math.min(4,artZoom+.25);updateArtZoom();});
 $("#art-zoom-out").addEventListener("click",()=>{artZoom=Math.max(.5,artZoom-.25);updateArtZoom();});
 $("#art-zoom-reset").addEventListener("click",()=>{artZoom=1;updateArtZoom();});
-$("#profile-button").addEventListener("click", () => {
-  if(currentWorkspace!=="character"||!editMode)return;
-  for (const key of [
-    "alternateIdentities",
-    "campaignName",
-    "background",
-    "personality",
-    "quote",
-    "tactics",
-    "appearance",
-    "notes",
-  ])
-    $(`#profile-${key}`).value = current.profile?.[key] || "";
-  $("#points-base").value = current.points?.base || 0;
-  $("#points-disadvantages").value = current.points?.disadvantages || 0;
-  $("#points-experience").value = current.points?.experience || 0;
-  $("#profile-dialog").showModal();
-});
-$("#profile-form").addEventListener("submit", (event) => {
-  event.preventDefault();
-  for (const key of [
-    "alternateIdentities",
-    "campaignName",
-    "background",
-    "personality",
-    "quote",
-    "tactics",
-    "appearance",
-    "notes",
-  ])
-    current.profile[key] = $(`#profile-${key}`).value;
-  current.points = {
-    base: Number($("#points-base").value || 0),
-    disadvantages: Number($("#points-disadvantages").value || 0),
-    experience: Number($("#points-experience").value || 0),
-  };
+$("#profile-button").addEventListener("click",()=>showSheetPage("background"));
+$("#profile-form").addEventListener("input",event=>{
+  if(!editMode||currentWorkspace!=="character")return;
+  const field=event.target;
+  if(field.id==="identity-name")current.name=field.value;
+  else if(field.id==="identity-player")current.playerName=field.value;
+  else if(field.id.startsWith("profile-"))current.profile[field.id.slice(8)]=field.value;
+  else if(field.id==="points-base")current.points.base=Number(field.value||0);
+  else if(field.id==="points-disadvantages")current.points.disadvantages=Number(field.value||0);
+  else if(field.id==="points-experience")current.points.experience=Number(field.value||0);
   markHdcDirty();
-  $("#profile-dialog").close();
-  renderProfile();
-  toast("Profile updated — save the character");
 });
-$("#cancel-profile").addEventListener("click", () =>
-  $("#profile-dialog").close(),
-);
+$(".point-edit").addEventListener("input",event=>{if(!editMode)return;const map={"points-base":"base","points-disadvantages":"disadvantages","points-experience":"experience"},key=map[event.target.id];if(!key)return;current.points[key]=Number(event.target.value||0);markHdcDirty();renderProfile();});
 $("#portrait-input").addEventListener("change", async (event) => {
   const file = event.target.files[0],
     status = $("#portrait-status");
@@ -1444,7 +1485,7 @@ $("#remove-portrait").addEventListener("click", () => {
   renderPortraits();
   toast("Portrait removed — save the character");
 });
-$("#identity-button").addEventListener("click",()=>{if(editMode&&currentWorkspace==="character")showSheetPage("manage");});
+$("#identity-button").addEventListener("click",()=>{if(editMode&&currentWorkspace==="character")showSheetPage("background");});
 $("#identity-form").addEventListener("submit", (event) => {
   event.preventDefault();
   const nextName = $("#identity-name").value.trim() || current.name,
@@ -1635,6 +1676,9 @@ diceTray.bind();document.querySelectorAll("[data-nav]").forEach((button) =>
 );
 $("#sheet-menu-button").addEventListener("click",()=>setSheetMenu(!$("#sheet-page-menu").classList.contains("open")));
 $("#header-options").addEventListener("click",()=>{if(currentWorkspace!=="character")return;if(editMode)saveAndLockCharacter();else beginEdit();});
+$("#header-cancel-edit").addEventListener("click",cancelEdit);
+$("#add-xp").addEventListener("click",()=>{if(!current||!editMode)return;current.points.experience=Number(current.points.experience||0)+1;markHdcDirty();renderProfile();toast(`Earned XP increased to ${current.points.experience}`);});
+$("#points-experience-plus").addEventListener("click",()=>{if(!current||!editMode)return;current.points.experience=Number(current.points.experience||0)+1;$("#points-experience").value=current.points.experience;markHdcDirty();renderProfile();});
 $("#header-conditions").addEventListener("click",()=>{if(currentWorkspace==="play"){showSheetPage("actions");requestAnimationFrame(()=>$(".combat-panel")?.scrollIntoView({block:"start"}));}});
 document.querySelectorAll("#sheet-page-menu [data-page]").forEach((button) => button.addEventListener("click", () => showSheetPage(button.dataset.page)));
 document.querySelectorAll("[data-app-mode]").forEach(button=>button.addEventListener("click",()=>openAppMode(button.dataset.appMode)));
@@ -1645,6 +1689,9 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("./sw.js").then(registration=>registration.update()).catch(console.error);
 }
 setupIdentityOptions();
+setupPowerModifierDialog();
+$("#cancel-power-modifier").addEventListener("click",()=>$("#power-modifier-dialog").close());
+$("#apply-power-modifier").addEventListener("click",()=>{const modifier=selectedModifier(modifierEditKind);if(!modifier)return toast("Choose a modifier");if(modifierEditIndex>=0)additionalPowerModifiers[modifierEditIndex]=modifier;else additionalPowerModifiers.push(modifier);$("#power-advantage-key").value="none";$("#power-limitation-key").value="none";$("#power-advantages").value=0;$("#power-limitations").value=0;$("#power-modifier-dialog").close();renderPowerModifierList();updatePowerBuilder();});
 setupSheetPages();
 setupSheetGestures();
 renderLibrary();
