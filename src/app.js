@@ -252,11 +252,12 @@ function beginEdit(){ if(!current||editMode||currentWorkspace!=="character")retu
 function cancelEdit(){if(!editMode)return;current=isDraft?null:normalizeCharacter(editSnapshot);isDraft=false;editSnapshot=null;setEditMode(false);if(!current){renderLibrary();show("library-view");return;}renderSheet();showSheetPage(currentSheetPage);toast("Changes discarded");}
 function saveAndLockCharacter(){
   if(!current||!editMode)return;
+  const savedPage=currentSheetPage;
   current.name=$("#identity-name").value.trim()||current.name;
   current.playerName=$("#identity-player").value.trim();
   current.updatedAt=new Date().toISOString();
   saveCharacter(current);isDraft=false;editSnapshot=null;setEditMode(false);
-  currentWorkspace="character";currentSheetPage="characteristics";renderSheet();showSheetPage("characteristics");renderLibrary();toast("Character saved and locked");
+  currentWorkspace="character";currentSheetPage=savedPage;renderSheet();showSheetPage(savedPage);renderLibrary();toast("Character saved and locked");
 }
 function characterPointTotal(character){ const p=character.points||{},earned=(character.sections?.disadvantages||[]).reduce((sum,item)=>sum+(Number(item.mechanics?.cost)||0),0); return Number(p.base||0)+Math.min(earned,Number(p.disadvantages||0)||earned)+Number(p.experience||0); }
 function renderLibrary() {
@@ -371,7 +372,7 @@ function renderEntries() {
   $("#powers-sections").innerHTML=groupMarkup(["powers","framework","equipment"]);
   $("#disadvantages-sections").innerHTML=groupMarkup(["disadvantages"]);
   document.querySelectorAll("[data-entry-id]").forEach((node) => {
-    node.addEventListener("click", () => openEntryDetails(node.dataset.entrySection, node.dataset.entryId));
+    node.addEventListener("click", () => editMode&&currentWorkspace==="character"?openEntryEditor(node.dataset.entrySection,node.dataset.entryId):openEntryDetails(node.dataset.entrySection,node.dataset.entryId));
     const section=node.dataset.entrySection,entry=findEntry(section,node.dataset.entryId),target=entry?.mechanics?.roll,actions=[];
     if(Number.isFinite(target))actions.push({label:`Roll ${target}−`,aria:`Roll ${entry.name||entry.alias||"ability"}, target ${target} or less`,run:()=>rollAgainstTarget(target,entry.name||entry.alias||"Ability")});
     const recoveryTarget=entry?.mechanics?.recoveryRoll;
