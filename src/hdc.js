@@ -15,6 +15,31 @@ import {
 } from "./rules.js";
 const attribute = (node, name, fallback = "") =>
   node?.getAttribute(name) ?? fallback;
+function embeddedPortrait(root) {
+  const node = root.getElementsByTagName("IMAGE")[0];
+  const encoded = node?.textContent?.replace(/\s/g, "");
+  if (!encoded) return null;
+  try {
+    const extension = attribute(node, "FileName").split(".").pop()?.toLowerCase();
+    const mimeType =
+      extension === "png"
+        ? "image/png"
+        : extension === "gif"
+          ? "image/gif"
+          : extension === "webp"
+            ? "image/webp"
+            : "image/jpeg";
+    return {
+      dataUrl: `data:${mimeType};base64,${encoded}`,
+      mimeType,
+      width: 0,
+      height: 0,
+      bytes: atob(encoded).length,
+    };
+  } catch {
+    return null;
+  }
+}
 export function importHdc(xmlText) {
   const xml = new DOMParser().parseFromString(xmlText, "application/xml");
   const parseError = xml.querySelector("parsererror");
@@ -121,6 +146,7 @@ export function importHdc(xmlText) {
       disadvantages: Number(attribute(basic, "DISAD_POINTS", 0)),
       experience: Number(attribute(basic, "EXPERIENCE", 0)),
     },
+    portrait: embeddedPortrait(root),
     characteristics,
     sections,
     source: {
